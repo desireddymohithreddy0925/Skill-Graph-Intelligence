@@ -380,3 +380,26 @@
   text-decoration: underline;
 }
 
+@media (max-width: 768px) {
+  .ss-grid, .ss-topics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .ss-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .ss-stats-bar {
+    flex-wrap: wrap;
+  }
+  
+  .ss-body {
+    padding: 1rem;
+  }
+  
+  .ss-topic-actions {
+    flex-direction: column;
+  }
+}
+

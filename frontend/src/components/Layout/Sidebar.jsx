@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import './Sidebar.css';
 
-const Sidebar = ({ activeTab, setActiveTab }) => {
+const Sidebar = ({ activeTab, setActiveTab, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
     { id: 'career-gps', icon: Map, label: 'Career GPS', badge: 'New' },
@@ -26,7 +26,14 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <aside className="sidebar">
+    <>
+      {isMobileMenuOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+      <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <TrendingUp size={28} />
@@ -41,7 +48,10 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             <li 
               key={item.id} 
               className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                setIsMobileMenuOpen(false);
+              }}
             >
               <item.icon className="nav-icon" size={20} />
               <span>{item.label}</span>
@@ -67,14 +77,20 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         <ul className="nav-list">
           <li
             className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
+            onClick={() => {
+              setActiveTab('profile');
+              setIsMobileMenuOpen(false);
+            }}
           >
             <User className="nav-icon" size={20} />
             <span>Profile</span>
           </li>
           <li
             className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settings')}
+            onClick={() => {
+              setActiveTab('settings');
+              setIsMobileMenuOpen(false);
+            }}
           >
             <Settings className="nav-icon" size={20} />
             <span>Settings</span>
@@ -89,6 +105,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         <button className="upgrade-btn">Upgrade Now</button>
       </div>
     </aside>
+    </>
   );
 };
 

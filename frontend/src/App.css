@@ -13,13 +13,9 @@
   transition: margin-left 0.3s ease;
 }
 
-/* For smaller screens, we can hide sidebar or make it a drawer, 
-   but for this demo we'll keep it simple */
+/* For mobile screens */
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0;
-  }
-  .sidebar {
-    transform: translateX(-100%);
   }
 }

@@ -18,6 +18,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [history, setHistory] = useState([]);
   const [reportContext, setReportContext] = useState(null); // { subject, unit }
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigateToTab = (newTab) => {
     if (typeof newTab === 'function') {
@@ -103,9 +104,19 @@ function App() {
 
   return (
     <div className="app-layout">
-      <Sidebar activeTab={activeTab} setActiveTab={navigateToTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={navigateToTab} 
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+      />
       <div className="main-content">
-        <TopBar onLogout={handleLogout} onBack={handleBack} showBack={activeTab !== 'dashboard'} />
+        <TopBar 
+          onLogout={handleLogout} 
+          onBack={handleBack} 
+          showBack={activeTab !== 'dashboard'} 
+          toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        />
         {renderMainContent()}
       </div>
     </div>

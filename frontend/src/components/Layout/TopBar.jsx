@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Moon, Sun, Search, LogOut, User as UserIcon, Settings, ArrowLeft } from 'lucide-react';
+import { Bell, Moon, Sun, Search, LogOut, User as UserIcon, Settings, ArrowLeft, Menu } from 'lucide-react';
 import './TopBar.css';
 
-const TopBar = ({ onLogout, onBack, showBack }) => {
+const TopBar = ({ onLogout, onBack, showBack, toggleMobileMenu }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -26,6 +26,9 @@ const TopBar = ({ onLogout, onBack, showBack }) => {
             <ArrowLeft size={20} />
           </button>
         )}
+        <button className="action-btn mobile-menu-btn" onClick={toggleMobileMenu}>
+          <Menu size={20} />
+        </button>
         <h1 className="greeting">Welcome back, Mohith! 👋</h1>
         <div className="company-selector-wrapper">
           <select className="company-select">
