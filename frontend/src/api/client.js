@@ -44,7 +44,8 @@ export const VivaAPI = {
   completeTopic: (topic) => apiClient('/viva/topics/complete', {
     method: 'POST',
     body: { topic }
-  })
+  }),
+  getSubjects: () => apiClient('/viva/subjects', { method: 'GET' })
 };
 
 export const DashboardAPI = {

@@ -16,7 +16,7 @@ const SubjectSelection = ({ onSelectUnit, onViewReport }) => {
       try {
         const [statusRes, subjectsRes] = await Promise.all([
           VivaAPI.getTopicStatus(),
-          fetch(`${import.meta.env.PROD ? '' : 'http://localhost:5001'}/api/viva/subjects`).then(res => res.json())
+          VivaAPI.getSubjects()
         ]);
         setCompletedTopics(statusRes.completedTopics || {});
         setSubjects(subjectsRes.subjects || []);
