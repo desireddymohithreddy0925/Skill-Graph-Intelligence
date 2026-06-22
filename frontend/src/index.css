@@ -1,38 +1,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Colors - Light Mode */
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
+  /* Colors - Premium Dark Theme Default */
+  --bg-primary: #121212;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #242424;
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #64748b;
+  --text-primary: #f8fafc;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
 
-  --accent-primary: #4f46e5;
-  --accent-secondary: #6366f1;
-  --accent-tertiary: #818cf8;
+  /* Neon Green Accents */
+  --accent-primary: #00E676;
+  --accent-secondary: #00C853;
+  --accent-tertiary: #69F0AE;
 
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
 
-  --border-color: #e2e8f0;
+  --border-color: #333333;
 
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-bg: rgba(26, 26, 26, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-glow: 0 0 15px rgba(79, 70, 229, 0.3);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 16px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 15px 25px -3px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 15px rgba(0, 230, 118, 0.2);
 
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);
-  --gradient-secondary: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  --gradient-background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --gradient-primary: linear-gradient(135deg, #00E676 0%, #10b981 100%);
+  --gradient-background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -40,30 +39,13 @@
 }
 
 .dark {
-  /* Colors - Dark Mode */
-  --bg-primary: #020617;
-  --bg-secondary: #0f172a;
-  --bg-tertiary: #1e293b;
-
+  /* Same as root since we default to dark mode for this premium look */
+  --bg-primary: #121212;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #242424;
   --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-
-  --accent-primary: #6366f1;
-  --accent-secondary: #818cf8;
-  --accent-tertiary: #a5b4fc;
-
-  --border-color: #334155;
-
-  --glass-bg: rgba(15, 23, 42, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 8px 16px -1px rgb(0 0 0 / 0.5), 0 4px 8px -2px rgb(0 0 0 / 0.4);
-  --shadow-lg: 0 15px 25px -3px rgb(0 0 0 / 0.6), 0 8px 10px -4px rgb(0 0 0 / 0.5);
-  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.6);
-
-  --gradient-background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+  --text-secondary: #a1a1aa;
+  --border-color: #333333;
 }
 
 * {
@@ -231,4 +213,103 @@ h6 {
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
+}
+
+/* --- PREMIUM UI UPGRADES --- */
+
+/* Form Elements */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+select,
+textarea {
+  padding: 0.875rem 1.25rem !important;
+  border-radius: 0.75rem !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.95rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  outline: none !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  background: rgba(0, 230, 118, 0.05) !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 4px rgba(0, 230, 118, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+input.transparent-input,
+textarea.transparent-input,
+select.transparent-input,
+input[type="text"].transparent-input,
+input[type="number"].transparent-input {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+input.transparent-input:focus,
+textarea.transparent-input:focus,
+select.transparent-input:focus,
+input[type="text"].transparent-input:focus,
+input[type="number"].transparent-input:focus {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Glassmorphism upgrade for inline cards */
+[style*="border-radius: 1rem"][style*="border: 1px solid var(--border-color)"],
+[style*="border-radius: 0.5rem"][style*="border: 1px solid var(--border-color)"] {
+  background: rgba(30, 30, 30, 0.6) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Premium Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #00E676 0%, #00B259 100%) !important;
+  box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3) !important;
+  border: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  color: #000 !important; /* Better contrast on neon green */
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(0, 230, 118, 0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  color: var(--text-primary) !important;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px) !important;
 }

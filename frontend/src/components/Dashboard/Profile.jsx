@@ -1,42 +1,183 @@
-import React, { useState } from 'react';
-import { User, Edit2, Mail, Phone, Calendar, MapPin, Building, GraduationCap, Award, BookOpen } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Edit2, Mail, Phone, Calendar, MapPin, Building, GraduationCap, Award, BookOpen, Link, Code2, Search, Check, X } from 'lucide-react';
 import './Profile.css';
 
-const Profile = () => {
-  const [personalInfo, setPersonalInfo] = useState({
-    name: 'Mohith Reddy',
-    email: 'mohith.reddy@example.com',
-    phone: '+91 9876543210',
-    gender: 'Male',
-    dob: '15-08-2004'
-  });
+const Profile = ({ user, onUpdateUser }) => {
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [instituteInfo, setInstituteInfo] = useState({
-    name: 'SRM UNIVERSITY AP',
-    country: 'India',
-    state: 'Andhra Pradesh'
-  });
+  // Admin Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
-  const [academicInfo, setAcademicInfo] = useState({
-    rollNumber: 'AP25110140019',
-    degree: 'B TECH',
-    department: 'CSE',
-    specialization: 'PEWAI',
-    academicYear: '1st Year',
-    currentSemester: '1st Semester',
-    joiningYear: '2025'
-  });
+  // Edit Mode States
+  const [editSection, setEditSection] = useState(null);
+  const [formData, setFormData] = useState({});
 
-  const [educationDetails, setEducationDetails] = useState({
-    tenthBoard: 'SSC',
-    tenthPercentage: '92.83%',
-    twelfthBoard: 'BIEAP',
-    twelfthPercentage: '93.8%'
-  });
+  useEffect(() => {
+    if (['admin', 'sub admin', 'manager'].includes(user?.role)) {
+      setLoading(false); // Admin starts in search view
+    } else if (user?.email) {
+      fetchProfile(user.email);
+    }
+  }, [user]);
 
-  const handleEdit = (section) => {
-    alert(`Edit functionality for ${section} coming soon!`);
+  const fetchProfile = async (email, isStudentSelection = false) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/profile/${email}`);
+      const data = await res.json();
+      if (res.ok) {
+        if (isStudentSelection) {
+          setSelectedStudent(data);
+        } else {
+          setProfileData(data);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/profile/search?query=${encodeURIComponent(searchQuery)}`);
+      const data = await res.json();
+      if (res.ok) {
+        setSearchResults(data);
+        setSelectedStudent(null);
+      }
+    } catch (err) {
+      console.error("Error searching:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditClick = (section, currentData) => {
+    setEditSection(section);
+    if (section === 'personalInfo') {
+      // Include root-level email in the form data so it can be edited
+      setFormData({ ...currentData, email: profileData?.email });
+    } else {
+      setFormData(currentData || {});
+    }
+  };
+
+  const handleSave = async (sectionKey) => {
+    try {
+      const res = await fetch(`/api/profile/${profileData?.email || user.email}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section: sectionKey, data: formData })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setProfileData(updated);
+        setEditSection(null);
+        if (onUpdateUser && sectionKey === 'personalInfo') {
+          onUpdateUser({ email: updated.email, username: updated.personalInfo?.username });
+        }
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error("Error saving profile:", err);
+    }
+  };
+
+  if (loading && !searchResults.length && !profileData && !selectedStudent) {
+    return <div className="profile-container"><p>Loading profile...</p></div>;
+  }
+
+  // ---- ADMIN VIEW ----
+  if (['admin', 'sub admin', 'manager'].includes(user?.role)) {
+    return (
+      <div className="profile-container animate-fade-in">
+        <div className="profile-header-breadcrumb">
+          <Search size={18} />
+          <span>User Directory</span>
+        </div>
+
+        {!selectedStudent ? (
+          <div className="profile-card">
+            <h3>Search Students</h3>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <input 
+                type="text" 
+                placeholder="Search by username or roll number..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+              />
+              <button className="btn btn-primary" onClick={handleSearch}>Search</button>
+            </div>
+
+            {searchResults.length > 0 && (
+              <div style={{ marginTop: '2rem' }}>
+                <h4>Results ({searchResults.length})</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                  {searchResults.map(student => (
+                    <div 
+                      key={student._id} 
+                      style={{ padding: '1rem', background: 'var(--bg-primary)', borderRadius: '0.5rem', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                      onClick={() => fetchProfile(student.email, true)}
+                    >
+                      <div>
+                        <strong>{student.personalInfo?.username || student.email}</strong>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Roll: {student.personalInfo?.rollNumber || 'N/A'}</div>
+                      </div>
+                      <button className="btn btn-secondary btn-sm">View Profile</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <button className="btn btn-secondary" onClick={() => setSelectedStudent(null)} style={{ marginBottom: '1rem' }}>
+              &larr; Back to Search
+            </button>
+            <StudentProfileView data={selectedStudent} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ---- STUDENT VIEW ----
+  const data = profileData || {};
+  const personalInfo = data.personalInfo || {};
+  const socialProfile = data.socialProfile || {};
+  const codingProfiles = data.codingProfiles || {};
+
+  const renderEditForm = (sectionKey, fields) => (
+    <div className="profile-edit-form">
+      {fields.map(field => (
+        <div className="form-group" key={field.key} style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{field.label}</label>
+          <input 
+            type="text" 
+            value={formData[field.key] || ''} 
+            onChange={(e) => setFormData({...formData, [field.key]: e.target.value})}
+            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: 'var(--bg-primary)', border: '1px solid var(--accent-primary)', color: 'var(--text-primary)' }}
+          />
+        </div>
+      ))}
+      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+        <button className="btn btn-primary" onClick={() => handleSave(sectionKey)}><Check size={16}/> Save</button>
+        <button className="btn btn-secondary" onClick={() => setEditSection(null)}><X size={16}/> Cancel</button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="profile-container animate-fade-in">
@@ -49,126 +190,131 @@ const Profile = () => {
       <div className="profile-card">
         <div className="profile-card-header">
           <h3>Personal Information</h3>
-          <button className="btn-edit" onClick={() => handleEdit('Personal Information')}>
-            <Edit2 size={16} /> Edit
-          </button>
+          {editSection !== 'personalInfo' && (
+            <button className="btn-edit" onClick={() => handleEditClick('personalInfo', personalInfo)}>
+              <Edit2 size={16} /> Edit
+            </button>
+          )}
         </div>
-        <div className="profile-grid">
-          <div className="info-item">
-            <div className="info-label"><User size={14} /> Name</div>
-            <div className="info-value">{personalInfo.name}</div>
+        {editSection === 'personalInfo' ? (
+          renderEditForm('personalInfo', [
+            { key: 'email', label: 'Email Address' },
+            { key: 'username', label: 'Username' },
+            { key: 'institute', label: 'Institute' },
+            { key: 'rollNumber', label: 'Roll Number' },
+            { key: 'phoneNumber', label: 'Phone Number' },
+            { key: 'department', label: 'Department' },
+            { key: 'passoutYear', label: 'Passout Year' },
+            { key: 'gender', label: 'Gender' },
+          ])
+        ) : (
+          <div className="profile-grid">
+            <InfoItem icon={<User size={14}/>} label="Username" value={personalInfo.username} />
+            <InfoItem icon={<Mail size={14}/>} label="Email" value={data.email} />
+            <InfoItem icon={<Building size={14}/>} label="Institute" value={personalInfo.institute} />
+            <InfoItem icon={<BookOpen size={14}/>} label="Roll Number" value={personalInfo.rollNumber} />
+            <InfoItem icon={<Phone size={14}/>} label="Phone Number" value={personalInfo.phoneNumber} />
+            <InfoItem icon={<GraduationCap size={14}/>} label="Department" value={personalInfo.department} />
+            <InfoItem icon={<Calendar size={14}/>} label="Passout Year" value={personalInfo.passoutYear} />
+            <InfoItem icon={<User size={14}/>} label="Gender" value={personalInfo.gender} />
           </div>
-          <div className="info-item">
-            <div className="info-label"><Mail size={14} /> Email</div>
-            <div className="info-value">{personalInfo.email}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Phone size={14} /> Phone Number</div>
-            <div className="info-value">{personalInfo.phone}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><User size={14} /> Gender</div>
-            <div className="info-value">{personalInfo.gender}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Calendar size={14} /> Date of Birth</div>
-            <div className="info-value">{personalInfo.dob}</div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Institute Information */}
+      {/* Social Profile */}
       <div className="profile-card">
         <div className="profile-card-header">
-          <h3>Institute Information</h3>
-          <button className="btn-edit" onClick={() => handleEdit('Institute Information')}>
-            <Edit2 size={16} /> Edit
-          </button>
+          <h3>Social Profile</h3>
+          {editSection !== 'socialProfile' && (
+            <button className="btn-edit" onClick={() => handleEditClick('socialProfile', socialProfile)}>
+              <Edit2 size={16} /> Edit
+            </button>
+          )}
         </div>
-        <div className="profile-grid">
-          <div className="info-item">
-            <div className="info-label"><Building size={14} /> Institute Name</div>
-            <div className="info-value">{instituteInfo.name}</div>
+        {editSection === 'socialProfile' ? (
+          renderEditForm('socialProfile', [
+            { key: 'githubUrl', label: 'GitHub URL' },
+            { key: 'linkedInUrl', label: 'LinkedIn URL' },
+          ])
+        ) : (
+          <div className="profile-grid">
+            <InfoItem icon={<Link size={14}/>} label="GitHub" value={socialProfile.githubUrl} />
+            <InfoItem icon={<Link size={14}/>} label="LinkedIn" value={socialProfile.linkedInUrl} />
           </div>
-          <div className="info-item">
-            <div className="info-label"><MapPin size={14} /> Country</div>
-            <div className="info-value">{instituteInfo.country}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><MapPin size={14} /> State</div>
-            <div className="info-value">{instituteInfo.state}</div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Academic Information */}
+      {/* Coding Platforms */}
       <div className="profile-card">
         <div className="profile-card-header">
-          <h3>Academic Information</h3>
-          <button className="btn-edit" onClick={() => handleEdit('Academic Information')}>
-            <Edit2 size={16} /> Edit
-          </button>
+          <h3>Coding Platforms</h3>
+          {editSection !== 'codingProfiles' && (
+            <button className="btn-edit" onClick={() => handleEditClick('codingProfiles', codingProfiles)}>
+              <Edit2 size={16} /> Edit
+            </button>
+          )}
         </div>
-        <div className="profile-grid">
-          <div className="info-item">
-            <div className="info-label"><BookOpen size={14} /> Roll Number</div>
-            <div className="info-value">{academicInfo.rollNumber}</div>
+        {editSection === 'codingProfiles' ? (
+          renderEditForm('codingProfiles', [
+            { key: 'leetcode', label: 'LeetCode Username' },
+            { key: 'hackerrank', label: 'HackerRank Username' },
+            { key: 'codechef', label: 'CodeChef Username' },
+            { key: 'codeforces', label: 'CodeForces Username' },
+            { key: 'atcoder', label: 'AtCoder Username' },
+          ])
+        ) : (
+          <div className="profile-grid">
+            <InfoItem icon={<Code2 size={14}/>} label="LeetCode" value={codingProfiles.leetcode} />
+            <InfoItem icon={<Code2 size={14}/>} label="HackerRank" value={codingProfiles.hackerrank} />
+            <InfoItem icon={<Code2 size={14}/>} label="CodeChef" value={codingProfiles.codechef} />
+            <InfoItem icon={<Code2 size={14}/>} label="CodeForces" value={codingProfiles.codeforces} />
+            <InfoItem icon={<Code2 size={14}/>} label="AtCoder" value={codingProfiles.atcoder} />
           </div>
-          <div className="info-item">
-            <div className="info-label"><GraduationCap size={14} /> Degree</div>
-            <div className="info-value">{academicInfo.degree}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Building size={14} /> Department</div>
-            <div className="info-value">{academicInfo.department}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Award size={14} /> Specialization</div>
-            <div className="info-value">{academicInfo.specialization}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Calendar size={14} /> Academic Year</div>
-            <div className="info-value">{academicInfo.academicYear}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Calendar size={14} /> Current Semester</div>
-            <div className="info-value">{academicInfo.currentSemester}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Calendar size={14} /> Joining Year</div>
-            <div className="info-value">{academicInfo.joiningYear}</div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Education Details */}
+    </div>
+  );
+};
+
+// Helper components
+const InfoItem = ({ icon, label, value }) => (
+  <div className="info-item">
+    <div className="info-label">{icon} {label}</div>
+    <div className="info-value">{value || <span style={{color: 'var(--text-tertiary)', fontStyle: 'italic'}}>Not provided</span>}</div>
+  </div>
+);
+
+// Read-only view for Admin
+const StudentProfileView = ({ data }) => {
+  const p = data.personalInfo || {};
+  const s = data.socialProfile || {};
+  const c = data.codingProfiles || {};
+
+  return (
+    <div>
+      <h2 style={{ marginBottom: '2rem' }}>Profile: {p.username || data.email}</h2>
+      
       <div className="profile-card">
-        <div className="profile-card-header">
-          <h3>Education Details</h3>
-          <button className="btn-edit" onClick={() => handleEdit('Education Details')}>
-            <Edit2 size={16} /> Edit
-          </button>
-        </div>
-        <div className="profile-grid">
-          <div className="info-item">
-            <div className="info-label"><Building size={14} /> 10th Board</div>
-            <div className="info-value">{educationDetails.tenthBoard}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Award size={14} /> 10th Percentage</div>
-            <div className="info-value">{educationDetails.tenthPercentage}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Building size={14} /> 12th Board</div>
-            <div className="info-value">{educationDetails.twelfthBoard}</div>
-          </div>
-          <div className="info-item">
-            <div className="info-label"><Award size={14} /> 12th Percentage</div>
-            <div className="info-value">{educationDetails.twelfthPercentage}</div>
-          </div>
+        <h3>Personal Information</h3>
+        <div className="profile-grid" style={{ marginTop: '1rem' }}>
+          <InfoItem icon={<Mail size={14}/>} label="Email" value={data.email} />
+          <InfoItem icon={<BookOpen size={14}/>} label="Roll Number" value={p.rollNumber} />
+          <InfoItem icon={<Building size={14}/>} label="Institute" value={p.institute} />
+          <InfoItem icon={<GraduationCap size={14}/>} label="Department" value={p.department} />
+          <InfoItem icon={<Phone size={14}/>} label="Phone Number" value={p.phoneNumber} />
         </div>
       </div>
 
+      <div className="profile-card">
+        <h3>Social & Coding</h3>
+        <div className="profile-grid" style={{ marginTop: '1rem' }}>
+          <InfoItem icon={<Link size={14}/>} label="GitHub" value={s.githubUrl} />
+          <InfoItem icon={<Link size={14}/>} label="LinkedIn" value={s.linkedInUrl} />
+          <InfoItem icon={<Code2 size={14}/>} label="LeetCode" value={c.leetcode} />
+          <InfoItem icon={<Code2 size={14}/>} label="CodeChef" value={c.codechef} />
+        </div>
+      </div>
     </div>
   );
 };

@@ -41,6 +41,23 @@
   margin-bottom: 2rem;
 }
 
+.sidebar-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-right: -1.5rem;
+  padding-right: 1.5rem;
+}
+
+.sidebar-scrollable::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
 .nav-label {
   font-size: 0.75rem;
   text-transform: uppercase;

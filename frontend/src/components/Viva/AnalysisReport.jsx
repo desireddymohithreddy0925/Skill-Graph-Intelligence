@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Loading from '../ui/Loading';
 import { ChevronLeft, ChevronRight, TrendingUp, Info, Home, BarChart3, X } from 'lucide-react';
 import './AnalysisReport.css';
 
@@ -83,7 +84,7 @@ const AnalysisReport = ({ sessionId = 'mock_session_1', onReturnHome }) => {
     fetchReport();
   }, [sessionId]);
 
-  if (loading) return <div>Loading Report...</div>;
+  if (loading) return <div className="analysis-report-container"><Loading message="Loading Report..." /></div>;
   if (!mockData) return <div>No report found.</div>;
 
   const currentQ = mockData.questions[currentQIndex];

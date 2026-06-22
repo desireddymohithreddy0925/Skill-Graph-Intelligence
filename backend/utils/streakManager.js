@@ -1,0 +1,81 @@
+const User = require('../models/User');
+
+/**
+ * Updates a user's streak based on their last activity.
+ * Call this whenever a user does a qualifying daily activity.
+ */
+const updateStreak = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) return null;
+
+    const now = new Date();
+    const lastActivity = user.lastActivityDate;
+
+    // Normalize to midnight UTC for day comparisons
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    let updates = {};
+
+    if (!lastActivity) {
+      updates = { streak: 1, lastActivityDate: now, activityHistory: [today] };
+    } else {
+      const lastDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
+      const diffDays = Math.floor((today - lastDay) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) {
+        return { streak: user.streak, message: 'Streak already maintained today.' };
+      } else if (diffDays === 1) {
+        const history = [...user.activityHistory];
+        if (!history.some(d => new Date(d).getTime() === today.getTime())) {
+          history.push(today);
+        }
+        updates = { streak: user.streak + 1, lastActivityDate: now, activityHistory: history };
+      } else {
+        const history = [...user.activityHistory];
+        if (!history.some(d => new Date(d).getTime() === today.getTime())) {
+          history.push(today);
+        }
+        updates = { streak: 1, lastActivityDate: now, activityHistory: history };
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updates }, { new: true });
+    return { streak: updatedUser.streak, message: 'Streak updated!' };
+  } catch (error) {
+    console.error('Error updating streak:', error);
+    // Ignore error to avoid crashing the server on concurrent reads
+  }
+};
+
+/**
+ * Lazy evaluation of the current streak.
+ * Checks if midnight has passed and automatically consumes freezes without advancing the streak.
+ * Should be called whenever fetching user dashboard data.
+ */
+const evaluateCurrentStreak = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user || !user.lastActivityDate) return null;
+
+    const now = new Date();
+    const lastActivity = user.lastActivityDate;
+
+    // Normalize to midnight
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const lastDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
+    
+    const diffDays = Math.floor((today - lastDay) / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) {
+      await User.findByIdAndUpdate(userId, { $set: { streak: 0 } });
+      user.streak = 0;
+    }
+    
+    return { streak: user.streak };
+  } catch (err) {
+    console.error('Error evaluating streak:', err);
+  }
+};
+
+module.exports = { updateStreak, evaluateCurrentStreak };

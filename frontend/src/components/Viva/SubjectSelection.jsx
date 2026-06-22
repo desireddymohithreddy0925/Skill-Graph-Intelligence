@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Loading from '../ui/Loading';
 import { BookOpen, ChevronRight, Clock, Eye, LayoutGrid, LayoutList, Play, FileText, RotateCcw, Zap } from 'lucide-react';
 import { VivaAPI } from '../../api/client';
 import './SubjectSelection.css';
@@ -63,8 +64,7 @@ const SubjectSelection = ({ onSelectUnit, onViewReport }) => {
   if (loading) {
     return (
       <div className="ss-loading">
-        <div className="ss-spinner" />
-        <p>Loading practice sessions...</p>
+        <Loading message="Loading practice sessions..." />
       </div>
     );
   }

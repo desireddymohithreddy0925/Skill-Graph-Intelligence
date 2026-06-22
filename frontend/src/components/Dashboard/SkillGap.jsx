@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Loading from '../ui/Loading';
 import { Activity, CheckCircle2, XCircle, BrainCircuit } from 'lucide-react';
 import { DashboardAPI } from '../../api/client';
 import './SkillGap.css';
@@ -21,7 +22,7 @@ const SkillGap = () => {
     fetchSkills();
   }, []);
 
-  if (loading) return <div>Loading perfectly...</div>;
+  if (loading) return <Loading message="Analyzing Skill Gap..." />;
   if (!skills.length) return <div>No skill gap data found.</div>;
 
   const javaSkill = skills[0];

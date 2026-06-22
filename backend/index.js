@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
@@ -7,6 +9,13 @@ const mongoose = require('mongoose');
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // allow all origins for dev
+    methods: ["GET", "POST"]
+  }
+});
 const PORT = process.env.PORT || 5001;
 
 // Connect to MongoDB Atlas
@@ -18,14 +27,62 @@ mongoose.connect(process.env.MONGO_URI)
 app.use(cors());
 app.use(express.json());
 
+// Attach socket io to req
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 // Routes
 const authRoutes = require('./routes/auth');
-const vivaRoutes = require('./routes/viva');
+const profileRoutes = require('./routes/profile');
 const dashboardRoutes = require('./routes/dashboard');
+const projectsRoutes = require('./routes/projects');
+const vivaRoutes = require('./routes/viva');
+const skilltmeterRoutes = require('./routes/skilltmeter');
+const assignmentsRoutes = require('./routes/assignments');
+const rolesRoutes = require('./routes/roles');
+const assessmentsRoutes = require('./routes/assessments');
+const linksRoutes = require('./routes/links');
+const codingProblemsRoutes = require('./routes/codingProblems');
+const classesRoutes = require('./routes/classes');
+const resumeRoutes = require('./routes/resume');
+const complaintsRoutes = require('./routes/complaints');
 
 app.use('/api/auth', authRoutes);
-app.use('/api/viva', vivaRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/viva', vivaRoutes);
+app.use('/api/skilltmeter', skilltmeterRoutes);
+app.use('/api/assignments', assignmentsRoutes);
+app.use('/api/roles', rolesRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/assessments', assessmentsRoutes);
+app.use('/api/links', linksRoutes);
+app.use('/api/coding-problems', codingProblemsRoutes);
+app.use('/api/classes', classesRoutes);
+app.use('/api/resume', resumeRoutes);
+app.use('/api/complaints', complaintsRoutes);
+
+// Socket.io logic for SkillTMeter
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  socket.on('joinPresentation', (joinCode) => {
+    socket.join(joinCode);
+    console.log(`Socket ${socket.id} joined presentation ${joinCode}`);
+  });
+
+  // When a presenter changes slide
+  socket.on('changeSlide', (data) => {
+    // data: { joinCode, slideIndex }
+    io.to(data.joinCode).emit('slideChanged', data.slideIndex);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -47,6 +104,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running perfectly on http://localhost:${PORT}`);
 });

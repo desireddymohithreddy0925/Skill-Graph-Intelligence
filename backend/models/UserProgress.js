@@ -11,7 +11,15 @@ const UserProgressSchema = new mongoose.Schema({
     type: Map,
     of: Boolean,
     default: {}
-  }
+  },
+  dreamCompany: { type: String, default: 'Google' },
+  currentSkills: [{ type: String }],
+  skillRoadmap: [{
+    id: { type: String }, // Can be node ID or title
+    title: { type: String },
+    status: { type: String, default: 'locked' }, // 'completed', 'in-progress', 'locked'
+    color: { type: String, default: 'var(--text-tertiary)' }
+  }]
 });
 
 module.exports = mongoose.model('UserProgress', UserProgressSchema);

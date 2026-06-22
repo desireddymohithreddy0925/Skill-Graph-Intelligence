@@ -142,54 +142,65 @@ const mockSubjects = [
 ];
 
 const mockDashboardData = {
-  overview: {
-    totalInterviews: 12,
-    averageScore: 88,
-    recentActivity: [
-      { type: 'viva', subject: 'ReactJS', date: '2026-06-11' },
-      { type: 'viva', subject: 'NodeJS', date: '2026-06-09' }
-    ]
+  stats: {
+    xp: 1240,
+    streak: 12
   },
-  skills: [
-    {
-      name: 'Java',
-      score: 40,
-      breakdown: [
-        { name: 'OOP', status: 'pass' },
-        { name: 'Collections', status: 'pass' },
-        { name: 'Streams', status: 'fail' },
-        { name: 'Threads', status: 'fail' },
-        { name: 'Spring', status: 'fail' }
-      ],
-      insight: 'You are strong in core Java, but struggle with advanced concepts like Streams and Multithreading. These are highly tested in technical rounds. Focus on java.util.stream API first.'
-    }
+  placementReadiness: {
+    overall: 82,
+    technical: 85,
+    communication: 70,
+    consistency: 90,
+    projects: 60
+  },
+  todaysMission: [
+    { id: 'm1', title: 'Complete 2 Coding Problems', completed: false },
+    { id: 'm2', title: 'Finish Arrays Module', completed: false },
+    { id: 'm3', title: 'Score 60% in Quiz', completed: true }
   ],
-  dreamCompanies: {
-    Google: {
-      readiness: 72,
-      missing: ['System Design', 'Kubernetes']
-    },
-    Amazon: {
-      readiness: 85,
-      missing: ['AWS Architecture', 'Leadership Principles']
-    },
-    Microsoft: {
-      readiness: 78,
-      missing: ['C# / .NET Core', 'Azure Fundamentals']
+  aiSkillGap: {
+    targetSkill: 'DSA',
+    overallMastery: 70,
+    roadmapChecklist: [
+      { title: 'Recursion', status: 'completed' },
+      { title: 'Dynamic Programming', status: 'missing' }
+    ],
+    aiStrategy: {
+      hoursToMaster: 18,
+      path: ['Recursion', 'DP', 'Graphs']
     }
   },
-  badges: [
-    { id: 1, title: 'Java Expert', icon: '☕', level: 'expert' },
-    { id: 2, title: 'DSA Beginner', icon: '🧠', level: 'beginner' },
-    { id: 3, title: 'Resume Ready', icon: '📄', level: 'ready' },
-    { id: 4, title: 'Interview Ready', icon: '🎯', level: 'ready' },
-  ],
-  nextAction: {
-    title: 'Complete 2 Graph Problems',
-    impact: '+4 Readiness',
-    time: '30 mins',
-    overallReadiness: 73
-  }
+  competencyGraph: {
+    logic: 85,
+    system: 90,
+    database: 70,
+    frontend: 80,
+    behavioral: 65,
+    structures: 80,
+    peerRank: 'Top 5%',
+    percentile: 95.4
+  },
+  gamification: {
+    xpVelocity: [30, 45, 35, 60, 40, 80, 50],
+    milestones: {
+      level: 12,
+      progressPercent: 65,
+      xpToNext: 250,
+      upcomingReward: 'Advanced System Design Docs'
+    }
+  },
+  performanceIntelligence: {
+    accuracy: 84,
+    focusArea: 'Graph Connectivity'
+  },
+  skillRoadmap: [
+    { id: 1, title: 'Programming Basics', status: 'completed', color: 'var(--success)' },
+    { id: 2, title: 'Arrays', status: 'in-progress', color: 'var(--warning)' },
+    { id: 3, title: 'Sorting', status: 'locked', color: 'var(--error)' },
+    { id: 4, title: 'Trees', status: 'locked', color: 'var(--error)' },
+    { id: 5, title: 'Graphs', status: 'locked', color: 'var(--error)' },
+    { id: 6, title: 'Dynamic Programming', status: 'locked', color: 'var(--error)' }
+  ]
 };
 
 const mockUserProgress = {

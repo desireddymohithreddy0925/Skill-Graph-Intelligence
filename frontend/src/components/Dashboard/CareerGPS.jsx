@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import Loading from '../ui/Loading';
 import { MapPin, Check, Briefcase, GraduationCap, Building } from 'lucide-react';
 import { DashboardAPI } from '../../api/client';
 import './CareerGPS.css';
 
 const CareerGPS = () => {
   const [tasks, setTasks] = useState(null);
+  const [dreamCompany, setDreamCompany] = useState('Google');
 
   useEffect(() => {
     const loadTasks = async () => {
       try {
         const response = await DashboardAPI.getCareerGPS();
         setTasks(response.tasks);
+        setDreamCompany(response.dreamCompany || 'Google');
       } catch (err) {
         console.error('Failed to load GPS tasks perfectly', err);
       }
@@ -30,7 +33,7 @@ const CareerGPS = () => {
     }
   };
 
-  if (!tasks) return <div>Loading GPS...</div>;
+  if (!tasks) return <Loading message="Loading GPS..." />;
 
   const completedCount = Object.values(tasks).filter(Boolean).length;
   const totalTasks = Object.keys(tasks).length;
@@ -117,7 +120,7 @@ const CareerGPS = () => {
           </div>
           <div className="node-content dream-company-node">
             <div className="node-title dream-company-title">Dream Company</div>
-            <div className="node-subtitle" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>Microsoft</div>
+            <div className="node-subtitle" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{dreamCompany}</div>
           </div>
         </div>
       </div>
