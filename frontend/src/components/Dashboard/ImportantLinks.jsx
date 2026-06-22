@@ -108,7 +108,7 @@ const ImportantLinks = ({ user }) => {
       {loading ? (
         <p>Loading links...</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
           {links.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No important links have been added yet.</p>}
           {links.map((link) => (
             <div key={link._id} style={{ background: 'var(--bg-tertiary)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>

@@ -67,7 +67,7 @@ const ResumeBuilder = ({ user }) => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
         {/* Past Resume Upload */}
         <div style={{ background: 'var(--bg-secondary)', padding: '2rem', borderRadius: '1rem', border: '1px dashed var(--border-color)', textAlign: 'center' }}>
           <h3 style={{ marginBottom: '1rem' }}>Past Resume</h3>
@@ -133,7 +133,7 @@ const ResumeBuilder = ({ user }) => {
             <SparklesIcon /> Analysis Report
           </h2>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
             <div style={{ background: 'rgba(255, 171, 0, 0.05)', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid rgba(255, 171, 0, 0.2)' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ffab00', marginBottom: '1rem' }}>
                 <AlertTriangle size={20} /> Changes to be done
