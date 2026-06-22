@@ -121,3 +121,14 @@
   margin-right: 0.5rem;
   vertical-align: middle;
 }
+
+@media (max-width: 768px) {
+  .skill-gap-card {
+    padding: 1rem;
+  }
+  .skill-item-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

@@ -78,8 +78,8 @@ const AssessmentResults = ({ assessmentId, setActiveTab }) => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 250px', position: 'relative' }}>
           <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
           <input 
             type="text" 
@@ -92,7 +92,7 @@ const AssessmentResults = ({ assessmentId, setActiveTab }) => {
         <select 
           value={selectedClassId} 
           onChange={e => setSelectedClassId(e.target.value)}
-          style={{ padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', minWidth: '200px' }}
+          style={{ padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', flex: '1 1 200px' }}
         >
           <option value="">All Classes</option>
           {classes.map(c => (
@@ -104,8 +104,8 @@ const AssessmentResults = ({ assessmentId, setActiveTab }) => {
       {loading ? (
         <Loading message="Loading results..." />
       ) : (
-        <div style={{ background: 'var(--bg-secondary)', borderRadius: '1rem', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div className="table-responsive" style={{ background: 'var(--bg-secondary)', borderRadius: '1rem', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
             <thead style={{ background: 'var(--bg-tertiary)' }}>
               <tr>
                 <th style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)' }}>Rank</th>

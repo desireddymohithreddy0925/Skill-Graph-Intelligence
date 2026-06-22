@@ -182,6 +182,9 @@
 }
 
 @media (max-width: 768px) {
+  .projects-card {
+    padding: 1rem;
+  }
   .add-project-form {
     grid-template-columns: 1fr;
   }
@@ -189,5 +192,9 @@
   .form-group.full-width,
   .submit-project-btn {
     grid-column: span 1;
+  }
+  .your-projects-header {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }

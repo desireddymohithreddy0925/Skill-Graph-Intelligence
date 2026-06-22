@@ -20,8 +20,8 @@ const TopBar = ({ onLogout, onBack, showBack, toggleMobileMenu, onNavigate }) =>
         
       </div>
 
-      <div className="topbar-center" style={{ display: 'flex', gap: '2rem', fontWeight: '500', fontSize: '0.9rem' }}>
-        <div onClick={() => onNavigate('dashboard')} style={{ color: 'var(--accent-primary)', borderBottom: '2px solid var(--accent-primary)', paddingBottom: '0.5rem', cursor: 'pointer' }}>Dashboard</div>
+      <div className="topbar-center">
+        <div onClick={() => onNavigate('dashboard')} className="topbar-center-link">Dashboard</div>
       </div>
 
       <div className="topbar-right" style={{ flex: 1, justifyContent: 'flex-end', gap: '1rem' }}>

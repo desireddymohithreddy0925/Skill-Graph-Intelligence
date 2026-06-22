@@ -106,7 +106,7 @@ const StaffDashboard = ({ user }) => {
 
         {isAssigning && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-            <div style={{ background: 'var(--bg-secondary)', padding: '2rem', borderRadius: '1rem', width: '400px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ background: 'var(--bg-secondary)', padding: '2rem', borderRadius: '1rem', width: '400px', maxWidth: '90vw', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <h3>Assign Task to {selectedUser.personalInfo?.username || selectedUser.email}</h3>
               <input type="text" placeholder="Task Title" value={taskTitle} onChange={e => setTaskTitle(e.target.value)} style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
               <textarea placeholder="Description" value={taskDesc} onChange={e => setTaskDesc(e.target.value)} style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', minHeight: '100px' }} />
@@ -155,7 +155,7 @@ const StaffDashboard = ({ user }) => {
             }}>Save Changes</button>
           </div>
           
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'flex-end', background: 'var(--bg-tertiary)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'flex-end', flexWrap: 'wrap', background: 'var(--bg-tertiary)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Skill / Topic Title</label>
               <input type="text" value={newRoadmapNode.title} onChange={(e) => setNewRoadmapNode({...newRoadmapNode, title: e.target.value})} placeholder="e.g. React Fundamentals" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
@@ -244,7 +244,7 @@ const StaffDashboard = ({ user }) => {
           {loading ? (
             <p>Loading directory...</p>
           ) : (
-            <div className="users-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div className="users-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
               {filteredUsers.map(u => (
                 <div key={u._id} className="user-card" style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -320,7 +320,7 @@ const StaffDashboard = ({ user }) => {
           <h2 style={{ marginBottom: '1rem', color: 'var(--accent-primary)' }}>Role Management</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Create dynamic roles (e.g., Sub Admin, Guest). Users with these roles will have Staff access.</p>
           
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
             <input 
               type="text" 
               placeholder="New Role Name..." 
@@ -361,7 +361,7 @@ const StaffDashboard = ({ user }) => {
           </div>
 
           <h3 style={{ marginTop: '3rem', marginBottom: '1rem', color: 'var(--accent-primary)' }}>Assign Role to User</h3>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
             <input 
               type="email" 
               placeholder="User Email Address" 
@@ -437,7 +437,7 @@ const StaffDashboard = ({ user }) => {
             }}>Save Company</button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
             {companies.map(c => (
               <div key={c._id} style={{ background: 'var(--bg-tertiary)', padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
