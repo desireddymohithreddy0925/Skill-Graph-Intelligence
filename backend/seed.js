@@ -141,78 +141,6 @@ const mockSubjects = [
   }
 ];
 
-const mockDashboardData = {
-  userId: 'default_user',
-  stats: {
-    xp: 1240,
-    streak: 12
-  },
-  placementReadiness: {
-    overall: 82,
-    technical: 85,
-    communication: 70,
-    consistency: 90,
-    projects: 60
-  },
-  todaysMission: [
-    { id: 'm1', title: 'Complete 2 Coding Problems', completed: false },
-    { id: 'm2', title: 'Finish Arrays Module', completed: false },
-    { id: 'm3', title: 'Score 60% in Quiz', completed: true }
-  ],
-  aiSkillGap: {
-    targetSkill: 'DSA',
-    overallMastery: 70,
-    roadmapChecklist: [
-      { title: 'Recursion', status: 'completed' },
-      { title: 'Dynamic Programming', status: 'missing' }
-    ],
-    aiStrategy: {
-      hoursToMaster: 18,
-      path: ['Recursion', 'DP', 'Graphs']
-    }
-  },
-  competencyGraph: {
-    logic: 85,
-    system: 90,
-    database: 70,
-    frontend: 80,
-    behavioral: 65,
-    structures: 80,
-    peerRank: 'Top 5%',
-    percentile: 95.4
-  },
-  gamification: {
-    xpVelocity: [30, 45, 35, 60, 40, 80, 50],
-    milestones: {
-      level: 12,
-      progressPercent: 65,
-      xpToNext: 250,
-      upcomingReward: 'Advanced System Design Docs'
-    }
-  },
-  performanceIntelligence: {
-    accuracy: 84,
-    focusArea: 'Graph Connectivity'
-  },
-  skillRoadmap: [
-    { id: 1, title: 'Programming Basics', status: 'completed', color: 'var(--success)' },
-    { id: 2, title: 'Arrays', status: 'in-progress', color: 'var(--warning)' },
-    { id: 3, title: 'Sorting', status: 'locked', color: 'var(--error)' },
-    { id: 4, title: 'Trees', status: 'locked', color: 'var(--error)' },
-    { id: 5, title: 'Graphs', status: 'locked', color: 'var(--error)' },
-    { id: 6, title: 'Dynamic Programming', status: 'locked', color: 'var(--error)' }
-  ]
-};
-
-const mockUserProgress = {
-  userId: 'default_user',
-  gpsTasks: {
-    dsa: true,
-    dbms: false,
-    oop: false
-  },
-  completedTopics: {}
-};
 
 const mockReport = {
   sessionId: 'mock_session_1',
@@ -274,13 +202,8 @@ async function seed() {
     await Subject.deleteMany({});
     await DashboardData.deleteMany({});
     await UserProgress.deleteMany({});
-    await InterviewReport.deleteMany({});
-    console.log('Cleared existing data.');
-
-    // Insert new data
-    await Subject.insertMany(mockSubjects);
-    await DashboardData.create(mockDashboardData);
-    await UserProgress.create(mockUserProgress);
+    
+    // Note: UserProgress and DashboardData are now created dynamically per user on registration
     await InterviewReport.create(mockReport);
     
     console.log('Database seeded successfully!');

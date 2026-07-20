@@ -3,6 +3,9 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const UserProgress = require('../models/UserProgress');
+const DashboardData = require('../models/DashboardData');
+const { defaultDashboardData, defaultUserProgress } = require('../utils/defaultData');
 
 const admin = require('../firebaseAdmin');
 
@@ -59,6 +62,10 @@ router.post('/register', parseTokenIfExists, async (req, res) => {
     user.personalInfo.username = userEmail.split('@')[0];
 
     await user.save();
+
+    // Create user's multi-tenant tracking documents
+    await UserProgress.create({ ...defaultUserProgress, userId: user.id });
+    await DashboardData.create({ ...defaultDashboardData, userId: user.id });
 
     // Create token for local session
     const payload = { user: { id: user.id } };
