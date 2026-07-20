@@ -57,7 +57,7 @@ router.post('/register', authLimiter, parseTokenIfExists, async (req, res) => {
 
     if (!req.user && password) {
       // Hash password if not using Firebase
-      const salt = await bcrypt.genSalt(10);
+      const salt = await bcrypt.genSalt(12);
       user.password = await bcrypt.hash(password, salt);
     }
 
