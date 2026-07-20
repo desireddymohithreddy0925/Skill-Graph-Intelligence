@@ -14,29 +14,12 @@ const validateEmail = (email) => {
   return emailRegex.test(email);
 };
 
-// Middleware to verify Firebase Token
-const verifyFirebaseToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const idToken = authHeader.split('Bearer ')[1];
-    try {
-      if (admin) {
-        const decodedToken = await admin.verifyIdToken(idToken);
-        req.user = decodedToken;
-        return next();
-      }
-    } catch (error) {
-      console.error('Firebase token verification error:', error);
-      // Fall through to traditional auth if token is invalid or admin not init
-    }
-  }
-  next();
-};
+const { parseTokenIfExists } = require('../middleware/auth');
 
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
-router.post('/register', verifyFirebaseToken, async (req, res) => {
+router.post('/register', parseTokenIfExists, async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -66,8 +49,9 @@ router.post('/register', verifyFirebaseToken, async (req, res) => {
       user.password = await bcrypt.hash(password, salt);
     }
 
-    // Hardcode admin logic based on user request
-    if (userEmail === 'mohith09250217@gmail.com') {
+    // Assign admin role if email is in the ADMIN_EMAILS environment variable
+    const adminEmails = process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase()) : [];
+    if (adminEmails.includes(userEmail.toLowerCase())) {
       user.role = 'admin';
     }
 
@@ -99,7 +83,7 @@ router.post('/register', verifyFirebaseToken, async (req, res) => {
 // @route   POST /api/auth/login
 // @desc    Login user & get token
 // @access  Public
-router.post('/login', verifyFirebaseToken, async (req, res) => {
+router.post('/login', parseTokenIfExists, async (req, res) => {
   try {
     const { email, password } = req.body;
     
