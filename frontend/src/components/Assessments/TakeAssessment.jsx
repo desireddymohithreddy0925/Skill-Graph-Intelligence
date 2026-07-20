@@ -11,8 +11,9 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
   const [result, setResult] = useState(null);
   
   // Anti-cheat & Timer state
-  const [tabSwitches, setTabSwitches] = useState(0);
-  const tabSwitchesRef = useRef(0);
+  const [_vId, _setVId] = useState(0);
+  const _vIdRef = useRef(0);
+  const [_at, _setAt] = useState('');
   const [warningMsg, setWarningMsg] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
   
@@ -51,9 +52,9 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        tabSwitchesRef.current += 1;
-        const currentSwitches = tabSwitchesRef.current;
-        setTabSwitches(currentSwitches);
+        _vIdRef.current += 1;
+        const currentSwitches = _vIdRef.current;
+        _setVId(currentSwitches);
 
         if (currentSwitches === 1) {
           setWarningMsg('WARNING: You have switched tabs. Switching tabs is not allowed during the assessment. If you switch tabs 3 times, your assessment will be automatically submitted.');
@@ -78,6 +79,10 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}`);
       const data = await res.json();
+      
+      if (data._at) {
+        _setAt(data._at);
+      }
       
       // Jumble questions and options
       if (data.questions) {
@@ -141,8 +146,9 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
         body: JSON.stringify({
           studentId: user._id,
           answers,
-          tabSwitches: tabSwitchesRef.current,
-          autoSubmitted: isAutoSubmit
+          _vId: _vIdRef.current,
+          autoSubmitted: isAutoSubmit,
+          _at
         })
       });
       const data = await res.json();
