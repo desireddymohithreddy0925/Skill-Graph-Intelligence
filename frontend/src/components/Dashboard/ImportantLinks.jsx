@@ -29,7 +29,7 @@ const ImportantLinks = ({ user }) => {
 
   const fetchLinks = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/links${user?.id ? `?userId=${user.id}` : ''}`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/links${user?._id ? `?userId=${user._id}` : ''}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
