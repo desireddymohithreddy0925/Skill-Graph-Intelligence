@@ -93,11 +93,11 @@ router.post('/upload-pdf', verifyToken, requireStaff, upload.single('file'), asy
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    const dataBuffer = fs.readFileSync(req.file.path);
+    const dataBuffer = await fs.promises.readFile(req.file.path);
     const data = await pdf(dataBuffer);
     
-    // Remove temp file
-    fs.unlinkSync(req.file.path);
+    // Remove temp file asynchronously
+    await fs.promises.unlink(req.file.path);
 
     const text = data.text;
     const questions = [];
