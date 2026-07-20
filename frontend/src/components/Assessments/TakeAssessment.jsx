@@ -23,6 +23,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
   // Pre-assessment check state
   const [step, setStep] = useState('network_check'); // 'network_check', 'assessment'
   const [internetStatus, setInternetStatus] = useState('checking'); // 'checking', 'poor', 'good'
+  const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
 
   const checkInternet = async () => {
     setInternetStatus('checking');
@@ -186,16 +187,25 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
   if (loading) return <Loading message="Loading assessment details..." fullScreen={true} />;
   if (!assessment) return <div style={{ padding: '2rem' }}>Assessment not found.</div>;
 
-  const handleStartAssessment = () => {
-    setStep('assessment');
+  const requestFullscreen = () => {
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
-      elem.requestFullscreen();
+      elem.requestFullscreen().then(() => setShowFullscreenWarning(false)).catch(err => {
+        console.log(err);
+        setShowFullscreenWarning(true);
+      });
     } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen();
+      const p = elem.webkitRequestFullscreen();
+      if (p && p.catch) p.then(() => setShowFullscreenWarning(false)).catch(() => setShowFullscreenWarning(true));
     } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen();
+      const p = elem.msRequestFullscreen();
+      if (p && p.catch) p.then(() => setShowFullscreenWarning(false)).catch(() => setShowFullscreenWarning(true));
     }
+  };
+
+  const handleStartAssessment = () => {
+    setStep('assessment');
+    requestFullscreen();
   };
 
   if (step === 'network_check') {
@@ -293,6 +303,18 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
             <span style={{ fontWeight: 'bold' }}>{warningMsg}</span>
           </div>
         )}
+
+      {showFullscreenWarning && (
+        <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255, 171, 0, 0.1)', border: '1px solid var(--warning)', borderRadius: '0.5rem', color: 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertTriangle size={20} />
+            <span style={{ fontWeight: 'bold' }}>Fullscreen mode is recommended for the best experience.</span>
+          </div>
+          <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }} onClick={requestFullscreen}>
+            Enter Fullscreen
+          </button>
+        </div>
+      )}
 
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
