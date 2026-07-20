@@ -37,6 +37,7 @@ const presentationSchema = new mongoose.Schema({
       questionText: String,
       author: { type: String, default: 'Anonymous' },
       upvotes: { type: Number, default: 0 },
+      upvotedBy: [{ type: String }],
       isAnswered: { type: Boolean, default: false },
       createdAt: { type: Date, default: Date.now }
     }]
