@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --detectOpenHandles --runInBand --forceExit",
+    "test:watch": "jest --watch"
   },
   "keywords": [],
   "author": "",
@@ -29,5 +30,10 @@
     "multer": "^2.2.0",
     "pdf-parse": "^2.4.5",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2"
   }
 }
