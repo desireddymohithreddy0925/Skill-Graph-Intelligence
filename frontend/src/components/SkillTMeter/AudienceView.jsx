@@ -20,16 +20,27 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
   // QA state
   const [qaText, setQaText] = useState('');
 
-  useEffect(() => {
-    // Request fullscreen on mount
+  const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
+
+  const requestFullscreen = () => {
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch(err => console.log(err));
+      elem.requestFullscreen().then(() => setShowFullscreenWarning(false)).catch(err => {
+        console.log(err);
+        setShowFullscreenWarning(true);
+      });
     } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen();
+      const p = elem.webkitRequestFullscreen();
+      if (p && p.catch) p.then(() => setShowFullscreenWarning(false)).catch(() => setShowFullscreenWarning(true));
     } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen();
+      const p = elem.msRequestFullscreen();
+      if (p && p.catch) p.then(() => setShowFullscreenWarning(false)).catch(() => setShowFullscreenWarning(true));
     }
+  };
+
+  useEffect(() => {
+    // Request fullscreen on mount
+    requestFullscreen();
 
     return () => {
       // Exit fullscreen on unmount
@@ -148,6 +159,15 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
         <h2>{presentation.title}</h2>
         <button onClick={onLeave} className="btn-leave">Leave</button>
       </div>
+
+      {showFullscreenWarning && (
+        <div style={{ padding: '1rem', background: '#ff9800', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+          <span style={{ fontWeight: 'bold' }}>Fullscreen mode is recommended for the best experience.</span>
+          <button style={{ padding: '0.5rem 1rem', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }} onClick={requestFullscreen}>
+            Enter Fullscreen
+          </button>
+        </div>
+      )}
 
       <div className="audience-content">
         <h1 className="slide-question">{currentSlide.question}</h1>
