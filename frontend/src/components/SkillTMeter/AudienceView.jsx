@@ -52,9 +52,12 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
           setQaList(data.qa || []);
           
           // Connect socket
-          const newSocket = io(import.meta.env.VITE_BASE_URL + '');
+          const newSocket = io(import.meta.env.VITE_BASE_URL || '');
           setSocket(newSocket);
-          newSocket.emit('joinPresentation', joinCode);
+          
+          newSocket.on('connect', () => {
+            newSocket.emit('joinPresentation', joinCode);
+          });
 
           newSocket.on('slideChanged', (data) => {
             setCurrentSlide(data.currentSlide);

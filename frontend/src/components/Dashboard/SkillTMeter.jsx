@@ -105,9 +105,12 @@ const SkillTMeter = ({ user, onJoin }) => {
     const data = await res.json();
     setActivePresentation(data);
 
-    const newSocket = io(import.meta.env.VITE_BASE_URL + '');
+    const newSocket = io(import.meta.env.VITE_BASE_URL || '');
     setSocket(newSocket);
-    newSocket.emit('joinPresentation', data.joinCode);
+    
+    newSocket.on('connect', () => {
+      newSocket.emit('joinPresentation', data.joinCode);
+    });
 
     newSocket.on('newResponse', (responses) => {
       setActivePresentation(prev => ({ ...prev, responses }));
