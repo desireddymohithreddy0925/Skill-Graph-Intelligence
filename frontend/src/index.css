@@ -8,7 +8,7 @@
 
   --text-primary: #f8fafc;
   --text-secondary: #a1a1aa;
-  --text-tertiary: #9ca3af;
+  --text-tertiary: #71717a;
 
   /* Neon Green Accents */
   --accent-primary: #00E676;
@@ -31,7 +31,7 @@
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #00E676 0%, #10b981 100%);
-  --gradient-background: linear-gradient(135deg, #121212 0%, #0a1f13 50%, #1a1a1a 100%);
+  --gradient-background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -54,22 +54,27 @@
   padding: 0;
 }
 
+@keyframes meshMovement {
+  0% { background-position: 0% 50%, 100% 50%, 50% 100%, 0% 0%, 0% 0%; }
+  50% { background-position: 100% 50%, 0% 50%, 50% 0%, 0% 0%, 0% 0%; }
+  100% { background-position: 0% 50%, 100% 50%, 50% 100%, 0% 0%, 0% 0%; }
+}
+
 body {
   font-family: var(--font-sans);
-  background: var(--gradient-background);
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
+  background-color: #0d0d0d;
+  background-image: 
+    radial-gradient(circle at center, rgba(0, 230, 118, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at center, rgba(16, 185, 129, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at center, rgba(0, 200, 83, 0.04) 0%, transparent 50%),
+    var(--gradient-background);
+  background-size: 150% 150%, 200% 200%, 150% 150%, 100% 100%;
+  animation: meshMovement 20s ease-in-out infinite;
   background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.5;
-  transition: background 0.5s ease, color 0.5s ease;
+  transition: color 0.5s ease;
   -webkit-font-smoothing: antialiased;
-}
-
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 h1,
@@ -83,18 +88,13 @@ h6 {
   color: var(--text-primary);
 }
 
-*:focus-visible {
-  outline: 2px solid var(--accent-primary) !important;
-  outline-offset: 2px !important;
-}
-
 /* Utilities */
 .glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--glass-border);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), var(--shadow-md);
+  background: rgba(20, 20, 20, 0.65);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
   border-radius: 1rem;
 }
 
@@ -106,20 +106,20 @@ h6 {
 }
 
 .card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(20, 20, 20, 0.65);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
   border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--glass-border);
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
 }
 
 .card:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 230, 118, 0.15);
-  border-color: rgba(0, 230, 118, 0.4);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.7), 0 0 25px rgba(0, 230, 118, 0.15), inset 0 1px 0 rgba(255,255,255,0.15);
+  border-color: rgba(0, 230, 118, 0.3);
 }
 
 .btn {
@@ -173,12 +173,6 @@ h6 {
 .animate-fade-in {
   animation: fadeIn 0.4s ease forwards;
 }
-
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
 
 @keyframes pulse {
 
@@ -298,11 +292,11 @@ input[type="number"].transparent-input:focus {
 /* Glassmorphism upgrade for inline cards */
 [style*="border-radius: 1rem"][style*="border: 1px solid var(--border-color)"],
 [style*="border-radius: 0.5rem"][style*="border: 1px solid var(--border-color)"] {
-  background: rgba(30, 30, 30, 0.6) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
+  background: rgba(20, 20, 20, 0.65) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;
 }
 
 /* Premium Buttons */
