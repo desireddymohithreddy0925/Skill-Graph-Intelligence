@@ -86,9 +86,9 @@ const GamificationCenter = ({ data, stats }) => {
           <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>Missing a day resets your streak to zero. Keep logging in everyday to build your habit!</p>
         </div>
 
-      <div style={{ display: 'flex', gap: '2rem', flex: 1 }}>
+      <div style={{ display: 'flex', gap: '2rem', flex: 1, flexWrap: 'wrap' }}>
         {/* XP Velocity (Left) */}
-        <div style={{ flex: 1, background: 'var(--bg-tertiary)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: '1 1 300px', background: 'var(--bg-tertiary)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>XP VELOCITY</span>
             <span style={{ fontSize: '0.7rem', fontWeight: '600', color: 'var(--accent-primary)', background: 'rgba(0, 230, 118, 0.1)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>7 Day Trend</span>
@@ -119,7 +119,7 @@ const GamificationCenter = ({ data, stats }) => {
         </div>
 
         {/* Milestones (Right) */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.5rem 0' }}>
+        <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', padding: '0.5rem 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>MILESTONES</span>
             <span style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-primary)', background: 'var(--bg-tertiary)', padding: '0.2rem 0.5rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
