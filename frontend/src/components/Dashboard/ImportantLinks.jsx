@@ -19,7 +19,9 @@ const ImportantLinks = ({ user }) => {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       const data = await res.json();
       setAvailableClasses(data);
     } catch(err) { console.error(err); }
@@ -27,7 +29,9 @@ const ImportantLinks = ({ user }) => {
 
   const fetchLinks = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/links${user?.id ? `?userId=${user.id}` : ''}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/links${user?.id ? `?userId=${user.id}` : ''}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       const data = await res.json();
       setLinks(data);
     } catch (err) {
@@ -60,7 +64,10 @@ const ImportantLinks = ({ user }) => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this link?')) return;
     try {
-      await fetch(`${import.meta.env.VITE_BASE_URL}/api/links/${id}`, { method: 'DELETE' });
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/links/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       fetchLinks();
     } catch (err) {
       console.error(err);
