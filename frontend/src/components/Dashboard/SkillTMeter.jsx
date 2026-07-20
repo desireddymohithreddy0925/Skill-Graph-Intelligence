@@ -121,7 +121,9 @@ const SkillTMeter = ({ user, onJoin }) => {
     const data = await res.json();
     setActivePresentation(data);
 
-    const newSocket = io(import.meta.env.VITE_BASE_URL || '');
+    const newSocket = io(import.meta.env.VITE_BASE_URL || '', {
+      auth: { token: localStorage.getItem('token') }
+    });
     setSocket(newSocket);
     
     newSocket.on('connect', () => {

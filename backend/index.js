@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
@@ -68,6 +69,20 @@ app.use('/api/resume', resumeRoutes);
 app.use('/api/complaints', complaintsRoutes);
 
 // Socket.io logic for SkillTMeter
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) {
+    return next(new Error('Authentication error: Token missing'));
+  }
+  
+  const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-dev';
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return next(new Error('Authentication error: Invalid token'));
+    socket.user = decoded.user || decoded; // Support both standard and Firebase payloads
+    next();
+  });
+});
+
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
