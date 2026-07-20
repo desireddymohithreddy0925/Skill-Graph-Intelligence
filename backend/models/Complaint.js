@@ -3,11 +3,13 @@ const mongoose = require('mongoose');
 const ComplaintSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true
+    required: true,
+    maxLength: 255
   },
   description: {
     type: String,
-    required: true
+    required: true,
+    maxLength: 5000
   },
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
