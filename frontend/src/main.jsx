@@ -8,7 +8,7 @@ const originalFetch = window.fetch;
 window.fetch = async (...args) => {
   let [resource, config] = args;
   
-  if (typeof resource === 'string' && resource.includes('localhost:5001/api')) {
+  if (typeof resource === 'string' && resource.includes('/api')) {
     const token = localStorage.getItem('token');
     if (token) {
       config = config || {};
@@ -17,7 +17,7 @@ window.fetch = async (...args) => {
         'Authorization': `Bearer ${token}`
       };
     }
-  } else if (resource instanceof Request && resource.url.includes('localhost:5001/api')) {
+  } else if (resource instanceof Request && resource.url.includes('/api')) {
     const token = localStorage.getItem('token');
     if (token) {
       resource.headers.set('Authorization', `Bearer ${token}`);
