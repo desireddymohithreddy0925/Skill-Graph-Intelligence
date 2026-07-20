@@ -117,6 +117,28 @@ const Login = ({ onLogin }) => {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error('Please enter your email address first.');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const { sendPasswordResetEmail } = await import("firebase/auth");
+      const { auth } = await import("../../firebase");
+      
+      await sendPasswordResetEmail(auth, email);
+      toast.success('Password reset email sent! Check your inbox.');
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || 'Failed to send password reset email.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="login-container">
       <div className="login-bg-blob login-bg-blob--1"></div>
@@ -203,7 +225,7 @@ const Login = ({ onLogin }) => {
               <div className="login-input-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label htmlFor="password">Password</label>
-                  {!isRegistering && <a href="#" onClick={(e) => { e.preventDefault(); toast("Please contact support to reset your password.", { icon: 'ℹ️' }); }} className="login-forgot">Forgot password?</a>}
+                  {!isRegistering && <a href="#" onClick={handleForgotPassword} className="login-forgot">Forgot password?</a>}
                 </div>
                 <div className="login-input-wrapper">
                   <Lock size={16} className="login-input-icon" />
