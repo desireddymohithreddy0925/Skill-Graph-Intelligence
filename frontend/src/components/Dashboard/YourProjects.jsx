@@ -138,8 +138,9 @@ const YourProjects = ({ user }) => {
           </h2>
           <form className="add-project-form" onSubmit={handleSubmit}>
             <div className="form-group full-width">
-              <label>Project Name</label>
+              <label htmlFor="project-name">Project Name</label>
               <input 
+                id="project-name"
                 type="text" 
                 name="projectName"
                 value={formData.projectName}
@@ -149,8 +150,9 @@ const YourProjects = ({ user }) => {
               />
             </div>
             <div className="form-group">
-              <label>Student Name</label>
+              <label htmlFor="student-name">Student Name</label>
               <input 
+                id="student-name"
                 type="text" 
                 name="studentName"
                 value={formData.studentName}
@@ -159,8 +161,9 @@ const YourProjects = ({ user }) => {
               />
             </div>
             <div className="form-group">
-              <label>Roll Number</label>
+              <label htmlFor="roll-number">Roll Number</label>
               <input 
+                id="roll-number"
                 type="text" 
                 name="rollNumber"
                 value={formData.rollNumber}
@@ -169,8 +172,9 @@ const YourProjects = ({ user }) => {
               />
             </div>
             <div className="form-group">
-              <label>GitHub Repository URL</label>
+              <label htmlFor="github-link">GitHub Repository URL</label>
               <input 
+                id="github-link"
                 type="url" 
                 name="githubLink"
                 value={formData.githubLink}
@@ -180,8 +184,9 @@ const YourProjects = ({ user }) => {
               />
             </div>
             <div className="form-group">
-              <label>OneDrive Link</label>
+              <label htmlFor="onedrive-link">OneDrive Link</label>
               <input 
+                id="onedrive-link"
                 type="url" 
                 name="onedriveLink"
                 value={formData.onedriveLink}

@@ -102,8 +102,9 @@ const ImportantLinks = ({ user }) => {
           <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Plus size={20} /> Add New Link</h3>
           <form onSubmit={handleCreate} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 200px' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Title</label>
+              <label htmlFor="link-title" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Title</label>
               <input
+                id="link-title"
                 type="text"
                 placeholder="Link Title (e.g., Leave Application Form)"
                 value={title}
@@ -112,12 +113,12 @@ const ImportantLinks = ({ user }) => {
               />
             </div>
             <div style={{ flex: '1 1 200px' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Link URL</label>
-              <input type="url" placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+              <label htmlFor="link-url" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Link URL</label>
+              <input id="link-url" type="url" placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
             </div>
             <div style={{ flex: '1 1 200px' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Target Classes</label>
-              <select multiple value={targetClasses} onChange={e => setTargetClasses(Array.from(e.target.selectedOptions, option => option.value))} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', height: '80px' }}>
+              <label htmlFor="link-target-classes" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Target Classes</label>
+              <select id="link-target-classes" multiple value={targetClasses} onChange={e => setTargetClasses(Array.from(e.target.selectedOptions, option => option.value))} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', height: '80px' }}>
                 {availableClasses.map(c => <option key={c._id} value={c._id}>{c.name} ({c.year})</option>)}
               </select>
             </div>
