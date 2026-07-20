@@ -20,16 +20,27 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
   // QA state
   const [qaText, setQaText] = useState('');
 
-  useEffect(() => {
-    // Request fullscreen on mount
+  const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
+
+  const requestFullscreen = () => {
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch(err => console.log(err));
+      elem.requestFullscreen().then(() => setShowFullscreenWarning(false)).catch(err => {
+        console.log(err);
+        setShowFullscreenWarning(true);
+      });
     } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen();
+      const p = elem.webkitRequestFullscreen();
+      if (p && p.catch) p.then(() => setShowFullscreenWarning(false)).catch(() => setShowFullscreenWarning(true));
     } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen();
+      const p = elem.msRequestFullscreen();
+      if (p && p.catch) p.then(() => setShowFullscreenWarning(false)).catch(() => setShowFullscreenWarning(true));
     }
+  };
+
+  useEffect(() => {
+    // Request fullscreen on mount
+    requestFullscreen();
 
     return () => {
       // Exit fullscreen on unmount
@@ -41,7 +52,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
 
   useEffect(() => {
     // Fetch initial data
-    fetch(`http://localhost:5001/api/skilltmeter/join/${joinCode}`)
+    fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/join/${joinCode}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
@@ -52,9 +63,14 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
           setQaList(data.qa || []);
           
           // Connect socket
-          const newSocket = io('http://localhost:5001');
+          const newSocket = io(import.meta.env.VITE_BASE_URL || '', {
+            withCredentials: true
+          });
           setSocket(newSocket);
-          newSocket.emit('joinPresentation', joinCode);
+          
+          newSocket.on('connect', () => {
+            newSocket.emit('joinPresentation', joinCode);
+          });
 
           newSocket.on('slideChanged', (data) => {
             setCurrentSlide(data.currentSlide);
@@ -95,7 +111,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
   const submitResponse = async (type, payload) => {
     try {
       const body = { type, slideIndex: presentation.currentSlideIndex, payload, userId: user?._id };
-      await fetch(`http://localhost:5001/api/skilltmeter/presentations/${joinCode}/submit`, {
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${joinCode}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -114,7 +130,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
 
   const submitQa = async () => {
     if (!qaText.trim()) return;
-    await fetch(`http://localhost:5001/api/skilltmeter/presentations/${joinCode}/qa`, {
+    await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${joinCode}/qa`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ questionText: qaText, slideIndex: presentation.currentSlideIndex, userId: user?._id })
@@ -123,7 +139,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
   };
 
   const upvoteQa = async (qaId) => {
-    await fetch(`http://localhost:5001/api/skilltmeter/presentations/${joinCode}/qa/${qaId}/upvote`, {
+    await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${joinCode}/qa/${qaId}/upvote`, {
       method: 'PUT'
     });
   };
@@ -145,6 +161,15 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
         <h2>{presentation.title}</h2>
         <button onClick={onLeave} className="btn-leave">Leave</button>
       </div>
+
+      {showFullscreenWarning && (
+        <div style={{ padding: '1rem', background: '#ff9800', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+          <span style={{ fontWeight: 'bold' }}>Fullscreen mode is recommended for the best experience.</span>
+          <button style={{ padding: '0.5rem 1rem', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }} onClick={requestFullscreen}>
+            Enter Fullscreen
+          </button>
+        </div>
+      )}
 
       <div className="audience-content">
         <h1 className="slide-question">{currentSlide.question}</h1>

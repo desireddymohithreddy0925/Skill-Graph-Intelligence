@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Presentation, Plus, Play, ChevronRight, ChevronLeft, BarChart3, Cloud, MessageSquare, Trash2, Copy, Check } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { QRCodeSVG } from 'qrcode.react';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import './SkillTMeter.css';
 
 const SkillTMeter = ({ user, onJoin }) => {
@@ -22,6 +24,10 @@ const SkillTMeter = ({ user, onJoin }) => {
   const [socket, setSocket] = useState(null);
   const [copied, setCopied] = useState(false);
   const [leaderboard, setLeaderboard] = useState(null);
+  
+  // Delete confirm state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [presToDelete, setPresToDelete] = useState(null);
 
   useEffect(() => {
     fetchPresentations();
@@ -30,7 +36,7 @@ const SkillTMeter = ({ user, onJoin }) => {
   const fetchPresentations = async () => {
     if (!(user?._id || user?.id)) return;
     try {
-      const res = await fetch(`http://localhost:5001/api/skilltmeter/presentations/user/${user._id || user.id}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/user/${user._id || user.id}`);
       const data = await res.json();
       setPresentations(data);
     } catch (err) {
@@ -40,7 +46,7 @@ const SkillTMeter = ({ user, onJoin }) => {
 
   const handleSave = async () => {
     try {
-      const url = editingId ? `http://localhost:5001/api/skilltmeter/presentations/${editingId}` : 'http://localhost:5001/api/skilltmeter/presentations';
+      const url = editingId ? `${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${editingId}` : import.meta.env.VITE_BASE_URL + '/api/skilltmeter/presentations';
       const method = editingId ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
@@ -49,7 +55,7 @@ const SkillTMeter = ({ user, onJoin }) => {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Failed to save presentation');
+        toast.error(data.error || 'Failed to save presentation');
         return;
       }
       if (editingId) {
@@ -59,9 +65,10 @@ const SkillTMeter = ({ user, onJoin }) => {
       }
       setIsCreating(false);
       setEditingId(null);
+      toast.success('Presentation saved successfully');
     } catch (err) {
       console.error(err);
-      alert('Error saving presentation');
+      toast.error('Error saving presentation');
     }
   };
 
@@ -73,25 +80,34 @@ const SkillTMeter = ({ user, onJoin }) => {
     setIsCreating(true);
   };
 
-  const handleDelete = async (pId) => {
-    if (!window.confirm('Are you sure you want to delete this presentation?')) return;
+  const requestDelete = (pId) => {
+    setPresToDelete(pId);
+    setConfirmModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!presToDelete) return;
     try {
-      const res = await fetch(`http://localhost:5001/api/skilltmeter/presentations/${pId}`, { method: 'DELETE' });
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${presToDelete}`, { method: 'DELETE' });
       if (res.ok) {
-        setPresentations(presentations.filter(p => p._id !== pId));
+        setPresentations(presentations.filter(p => p._id !== presToDelete));
+        toast.success('Presentation deleted successfully');
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to delete');
+        toast.error(data.error || 'Failed to delete');
       }
     } catch (err) {
       console.error(err);
-      alert('Error deleting presentation');
+      toast.error('Error deleting presentation');
+    } finally {
+      setConfirmModalOpen(false);
+      setPresToDelete(null);
     }
   };
 
   const fetchLeaderboard = async (presId) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/skilltmeter/presentations/${presId}/leaderboard`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${presId}/leaderboard`);
       if (res.ok) {
         const data = await res.json();
         setLeaderboard(data);
@@ -101,13 +117,18 @@ const SkillTMeter = ({ user, onJoin }) => {
 
   const startPresentation = async (pres) => {
     // Fetch full presentation
-    const res = await fetch(`http://localhost:5001/api/skilltmeter/presentations/${pres._id}`);
+    const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${pres._id}`);
     const data = await res.json();
     setActivePresentation(data);
 
-    const newSocket = io('http://localhost:5001');
+    const newSocket = io(import.meta.env.VITE_BASE_URL || '', {
+      withCredentials: true
+    });
     setSocket(newSocket);
-    newSocket.emit('joinPresentation', data.joinCode);
+    
+    newSocket.on('connect', () => {
+      newSocket.emit('joinPresentation', data.joinCode);
+    });
 
     newSocket.on('newResponse', (responses) => {
       setActivePresentation(prev => ({ ...prev, responses }));
@@ -126,7 +147,7 @@ const SkillTMeter = ({ user, onJoin }) => {
   const stopPresentation = async () => {
     if (activePresentation) {
       try {
-        await fetch(`http://localhost:5001/api/skilltmeter/presentations/${activePresentation._id}/end`, { method: 'POST' });
+        await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${activePresentation._id}/end`, { method: 'POST' });
         fetchLeaderboard(activePresentation._id);
       } catch (err) { console.error(err); }
     }
@@ -137,7 +158,7 @@ const SkillTMeter = ({ user, onJoin }) => {
   const changeSlide = async (newIndex) => {
     if (newIndex < 0 || newIndex >= activePresentation.slides.length) return;
     try {
-      await fetch(`http://localhost:5001/api/skilltmeter/presentations/${activePresentation._id}/slide`, {
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${activePresentation._id}/slide`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slideIndex: newIndex })
@@ -149,7 +170,7 @@ const SkillTMeter = ({ user, onJoin }) => {
   };
 
   const markQaAnswered = async (qaId) => {
-    await fetch(`http://localhost:5001/api/skilltmeter/presentations/${activePresentation.joinCode}/qa/${qaId}/answer`, { method: 'PUT' });
+    await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${activePresentation.joinCode}/qa/${qaId}/answer`, { method: 'PUT' });
   };
 
   const handleCopy = (code) => {
@@ -439,7 +460,7 @@ const SkillTMeter = ({ user, onJoin }) => {
                     {(user.role === 'mentor' || user.role === 'skill t team' || user.role === 'admin' || user.role === 'subadmin') && (
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button className="btn btn-secondary" onClick={() => handleEdit(p)} style={{ flex: 1 }}>Edit</button>
-                        <button className="btn btn-secondary" onClick={() => handleDelete(p._id)} style={{ flex: 1, color: 'var(--error)' }}><Trash2 size={16}/></button>
+                        <button className="btn btn-secondary" onClick={() => requestDelete(p._id)} style={{ flex: 1, color: 'var(--error)' }}><Trash2 size={16}/></button>
                       </div>
                     )}
                   </div>
@@ -449,6 +470,20 @@ const SkillTMeter = ({ user, onJoin }) => {
           </div>
         )}
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Delete Presentation?"
+        message="Are you sure you want to delete this presentation? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setPresToDelete(null);
+        }}
+      />
     </div>
   );
 };

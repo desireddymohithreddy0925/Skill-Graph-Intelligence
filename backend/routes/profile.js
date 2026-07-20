@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const { verifyToken } = require('../middleware/auth');
+const { requireStaff } = require('../middleware/roles');
 
 // @route   GET /api/profile/all
 // @desc    Get all users (for Admin/Mentor dashboard) - Excludes Admins to keep them anonymous
-router.get('/all', async (req, res) => {
+router.get('/all', verifyToken, requireStaff, async (req, res) => {
   try {
     const users = await User.find({ role: { $nin: ['admin', 'sub admin', 'manager'] } }).select('-password').sort({ createdAt: -1 });
     res.json(users);
@@ -16,8 +18,8 @@ router.get('/all', async (req, res) => {
 
 // @route   GET /api/profile/search
 // @desc    Admin search for users
-// @access  Public (for now)
-router.get('/search', async (req, res) => {
+// @access  Private
+router.get('/search', verifyToken, requireStaff, async (req, res) => {
   try {
     const { query } = req.query;
     
@@ -39,9 +41,17 @@ router.get('/search', async (req, res) => {
 
 // @route   GET /api/profile/:email
 // @desc    Get user profile by email
-// @access  Public
-router.get('/:email', async (req, res) => {
+// @access  Private
+router.get('/:email', verifyToken, async (req, res) => {
   try {
+    // IDOR protection: only allow users to fetch their own profile, or staff can fetch any
+    if (req.user.email !== req.params.email) {
+      const userReq = await User.findById(req.user.id);
+      if (!userReq || !['admin', 'sub admin', 'manager', 'mentor'].includes(userReq.role)) {
+        return res.status(403).json({ error: 'Forbidden: Cannot access other profiles' });
+      }
+    }
+    
     const user = await User.findOne({ email: req.params.email }).select('-password');
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -55,9 +65,13 @@ router.get('/:email', async (req, res) => {
 
 // @route   PUT /api/profile/:email
 // @desc    Update user profile
-// @access  Public
-router.put('/:email', async (req, res) => {
+// @access  Private
+router.put('/:email', verifyToken, async (req, res) => {
   try {
+    if (req.user.email !== req.params.email) {
+      return res.status(403).json({ error: 'Forbidden: Cannot modify other profiles' });
+    }
+
     const { section, data } = req.body;
     // section should be 'personalInfo', 'socialProfile', or 'codingProfiles'
     

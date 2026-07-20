@@ -28,6 +28,9 @@ import CodingApproaches from './components/CodingApproaches/CodingApproaches';
 import ClassesManagement from './components/Dashboard/ClassesManagement';
 import MentorRoadmapManagement from './components/Dashboard/MentorRoadmapManagement';
 import ResumeBuilder from './components/Resume/ResumeBuilder';
+import { Toaster } from 'react-hot-toast';
+import ConfirmModal from './components/ui/ConfirmModal';
+import { useUnsavedChanges } from './context/UnsavedChangesContext';
 import './App.css';
 
 function App() {
@@ -40,6 +43,10 @@ function App() {
   const [audienceJoinCode, setAudienceJoinCode] = useState(null);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState(null);
 
+  const { hasUnsavedChanges, setHasUnsavedChanges } = useUnsavedChanges();
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingTab, setPendingTab] = useState(null);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const joinCodeFromUrl = params.get('join');
@@ -49,6 +56,15 @@ function App() {
   }, []);
 
   const navigateToTab = (newTab) => {
+    if (hasUnsavedChanges) {
+      setPendingTab(() => newTab);
+      setShowUnsavedModal(true);
+      return;
+    }
+    executeNavigation(newTab);
+  };
+
+  const executeNavigation = (newTab) => {
     if (typeof newTab === 'function') {
       // Handle functional updates if any
       setActiveTab((prev) => {
@@ -60,6 +76,20 @@ function App() {
       setHistory((prev) => [...prev, activeTab]);
       setActiveTab(newTab);
     }
+  };
+
+  const confirmNavigation = () => {
+    setHasUnsavedChanges(false);
+    setShowUnsavedModal(false);
+    if (pendingTab) {
+      executeNavigation(pendingTab);
+      setPendingTab(null);
+    }
+  };
+
+  const cancelNavigation = () => {
+    setShowUnsavedModal(false);
+    setPendingTab(null);
   };
 
   const handleBack = () => {
@@ -89,7 +119,15 @@ function App() {
     navigateToTab('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     setIsLoggedIn(false);
     setUser(null);
   };
@@ -193,6 +231,22 @@ function App() {
           {renderMainContent()}
         </div>
       </div>
+      <Toaster position="bottom-right" toastOptions={{
+        style: {
+          background: 'var(--bg-secondary)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border-color)',
+        }
+      }} />
+      <ConfirmModal 
+        isOpen={showUnsavedModal}
+        title="Unsaved Changes"
+        message="You have unsaved changes. Are you sure you want to leave? Your changes will be lost."
+        confirmText="Yes, leave page"
+        cancelText="Cancel"
+        onConfirm={confirmNavigation}
+        onCancel={cancelNavigation}
+      />
     </div>
   );
 }

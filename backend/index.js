@@ -1,31 +1,61 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const cookieParser = require('cookie-parser');
+const cookie = require('cookie');
 const mongoose = require('mongoose');
+const helmet = require('helmet');
 
 // Load environment variables
 dotenv.config();
 
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL ERROR: JWT_SECRET is not defined in the environment variables.");
+  process.exit(1);
+}
+
 const app = express();
 const server = http.createServer(app);
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+};
+
 const io = new Server(server, {
-  cors: {
-    origin: "*", // allow all origins for dev
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions
 });
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5005;
 
 // Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB Atlas'))
-  .catch((err) => console.error('Error connecting to MongoDB:', err));
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('Connected to MongoDB Atlas'))
+    .catch((err) => console.error('Error connecting to MongoDB:', err));
+
+  // Monitor MongoDB connection health
+  mongoose.connection.on('disconnected', () => {
+    console.error('MongoDB disconnected! Shutting down process to trigger orchestrator restart...');
+    process.exit(1); // Force crash so PM2/Docker can restart the healthy state
+  });
+
+  mongoose.connection.on('reconnected', () => {
+    console.log('MongoDB reconnected successfully.');
+  });
+}
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(helmet());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '100kb' }));
+app.use(cookieParser());
 
 // Attach socket io to req
 app.use((req, res, next) => {
@@ -65,6 +95,21 @@ app.use('/api/resume', resumeRoutes);
 app.use('/api/complaints', complaintsRoutes);
 
 // Socket.io logic for SkillTMeter
+io.use((socket, next) => {
+  const cookies = cookie.parse(socket.handshake.headers.cookie || '');
+  const token = cookies.token || socket.handshake.auth?.token;
+  if (!token) {
+    return next(new Error('Authentication error: Token missing'));
+  }
+  
+  const JWT_SECRET = process.env.JWT_SECRET;
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return next(new Error('Authentication error: Invalid token'));
+    socket.user = decoded.user || decoded; // Support both standard and Firebase payloads
+    next();
+  });
+});
+
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
@@ -103,7 +148,29 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Start server
-server.listen(PORT, () => {
-  console.log(`Server is running perfectly on http://localhost:${PORT}`);
+// Start server if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(PORT, () => {
+    console.log(`Server is running perfectly on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.log('UNHANDLED REJECTION! 💥 Shutting down gracefully...');
+  console.error(err);
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.log('UNCAUGHT EXCEPTION! 💥 Shutting down gracefully...');
+  console.error(err);
+  server.close(() => {
+    process.exit(1);
+  });
 });

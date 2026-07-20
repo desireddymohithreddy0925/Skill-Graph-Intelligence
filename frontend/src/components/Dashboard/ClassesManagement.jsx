@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Users, BookOpen, Trash2, Edit2, UserPlus, Upload, Shield } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import '../Dashboard/Dashboard.css';
 
 const ClassesManagement = ({ user }) => {
   const [classesList, setClassesList] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Delete confirm state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [classToDelete, setClassToDelete] = useState(null);
   
   // Create / Edit State
   const [editingId, setEditingId] = useState(null);
@@ -35,7 +41,7 @@ const ClassesManagement = ({ user }) => {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes');
       const data = await res.json();
       setClassesList(data);
     } catch (err) {
@@ -47,17 +53,17 @@ const ClassesManagement = ({ user }) => {
 
   const handleSaveClass = async (e) => {
     e.preventDefault();
-    if (!className || !classYear) return alert('Name and Year are required');
+    if (!className || !classYear) { toast.error('Name and Year are required'); return; }
 
     try {
       if (editingId) {
-        await fetch(`http://localhost:5001/api/classes/${editingId}`, {
+        await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: className, year: classYear })
         });
       } else {
-        await fetch('http://localhost:5001/api/classes', {
+        await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: className, year: classYear })
@@ -70,12 +76,24 @@ const ClassesManagement = ({ user }) => {
     } catch (err) { console.error(err); }
   };
 
-  const handleDeleteClass = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this class? All students will be unassigned.')) return;
+  const requestDeleteClass = (id) => {
+    setClassToDelete(id);
+    setConfirmModalOpen(true);
+  };
+
+  const handleDeleteClass = async () => {
+    if (!classToDelete) return;
     try {
-      await fetch(`http://localhost:5001/api/classes/${id}`, { method: 'DELETE' });
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${classToDelete}`, { method: 'DELETE' });
       fetchClasses();
-    } catch (err) { console.error(err); }
+      toast.success('Class deleted successfully');
+    } catch (err) { 
+      console.error(err); 
+      toast.error('Failed to delete class');
+    } finally {
+      setConfirmModalOpen(false);
+      setClassToDelete(null);
+    }
   };
 
   // ----- Inside Class View -----
@@ -85,14 +103,14 @@ const ClassesManagement = ({ user }) => {
     
     // Fetch mentors directory
     try {
-      const mRes = await fetch('http://localhost:5001/api/profile/all');
+      const mRes = await fetch(import.meta.env.VITE_BASE_URL + '/api/profile/all');
       const allUsers = await mRes.json();
       setMentorsDirectory(allUsers.filter(u => ['mentor', 'admin', 'sub admin', 'manager'].includes(u.role)));
     } catch (e) { console.error(e); }
     
     // Fetch students
     try {
-      const sRes = await fetch(`http://localhost:5001/api/classes/${cls._id}/students`);
+      const sRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${cls._id}/students`);
       const sData = await sRes.json();
       setStudents(sData);
     } catch (e) { console.error(e); }
@@ -109,14 +127,14 @@ const ClassesManagement = ({ user }) => {
     }
     
     try {
-      const res = await fetch(`http://localhost:5001/api/classes/${selectedClass._id}/mentors`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${selectedClass._id}/mentors`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mentorIds: newMentors })
       });
       const updatedClass = await res.json();
       // Update local state by repopulating mentors
-      const mRes = await fetch('http://localhost:5001/api/classes');
+      const mRes = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes');
       const allC = await mRes.json();
       const updatedFullClass = allC.find(c => c._id === updatedClass._id);
       setSelectedClass(updatedFullClass);
@@ -131,14 +149,15 @@ const ClassesManagement = ({ user }) => {
     const formData = new FormData();
     formData.append('file', file);
 
+    const toastId = toast.loading('Uploading and parsing CSV... This might take a moment.');
+
     try {
-      alert('Uploading and parsing CSV... This might take a moment.');
-      const res = await fetch(`http://localhost:5001/api/classes/${selectedClass._id}/upload-csv`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${selectedClass._id}/upload-csv`, {
         method: 'POST',
         body: formData
       });
       const data = await res.json();
-      alert(data.message || 'Upload complete');
+      toast.success(data.message || 'Upload complete', { id: toastId });
       
       // Refresh details
       fetchClassDetails(selectedClass);
@@ -146,32 +165,32 @@ const ClassesManagement = ({ user }) => {
       if(fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
       console.error(err);
-      alert('Error uploading file');
+      toast.error('Error uploading file', { id: toastId });
     }
   };
 
   const handleManualAdd = async (e) => {
     e.preventDefault();
-    if (!manualEmail) return alert('Email is required');
+    if (!manualEmail) { toast.error('Email is required'); return; }
     try {
-      const res = await fetch(`http://localhost:5001/api/classes/${selectedClass._id}/add-student-manual`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${selectedClass._id}/add-student-manual`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: manualEmail, username: manualUsername })
       });
       const data = await res.json();
       if (res.ok) {
-        alert('Student added successfully');
+        toast.success('Student added successfully');
         setManualEmail('');
         setManualUsername('');
         fetchClassDetails(selectedClass);
         fetchClasses();
       } else {
-        alert(data.error || 'Failed to add student');
+        toast.error(data.error || 'Failed to add student');
       }
     } catch (err) {
       console.error(err);
-      alert('Error adding student');
+      toast.error('Error adding student');
     }
   };
 
@@ -182,18 +201,19 @@ const ClassesManagement = ({ user }) => {
     setStudentWorks([]);
     
     try {
-      const pRes = await fetch(`http://localhost:5001/api/dashboard/full?userId=${student._id}`);
+      const pRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/full?userId=${student._id}`);
       const pData = await pRes.json();
       setStudentProgress(pData.data?.stats);
       
-      const wRes = await fetch(`http://localhost:5001/api/assignments/student/${student._id}`);
-      const wData = await wRes.json();
+      const wRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assignments/student/${student._id}`);
+      const wJson = await wRes.json();
+      const wData = wJson.data || wJson;
       setStudentWorks(wData);
 
-      const rRes = await fetch(`http://localhost:5001/api/dashboard/roadmap/${student._id}`);
+      const rRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/${student._id}`);
       if(rRes.ok) {
         const rData = await rRes.json();
-        setStudentRoadmap(rData.skillRoadmap || []);
+        setStudentRoadmap(rData.data?.skillRoadmap || []);
       }
     } catch (err) {
       console.error(err);
@@ -202,17 +222,17 @@ const ClassesManagement = ({ user }) => {
 
   const handleSaveRoadmap = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/dashboard/roadmap/${selectedStudent._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/${selectedStudent._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skillRoadmap: studentRoadmap })
       });
       if(res.ok) {
-        alert('Roadmap updated successfully');
+        toast.success('Roadmap updated successfully');
       }
     } catch(err) {
       console.error(err);
-      alert('Failed to update roadmap');
+      toast.error('Failed to update roadmap');
     }
   };
 
@@ -315,12 +335,12 @@ const ClassesManagement = ({ user }) => {
             
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'flex-end' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Skill / Topic Title</label>
-                <input type="text" value={newRoadmapNode.title} onChange={(e) => setNewRoadmapNode({...newRoadmapNode, title: e.target.value})} placeholder="e.g. React Fundamentals" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
+                <label htmlFor="roadmap-title" style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Skill / Topic Title</label>
+                <input id="roadmap-title" type="text" value={newRoadmapNode.title} onChange={(e) => setNewRoadmapNode({...newRoadmapNode, title: e.target.value})} placeholder="e.g. React Fundamentals" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Status</label>
-                <select value={newRoadmapNode.status} onChange={(e) => {
+                <label htmlFor="roadmap-status" style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Status</label>
+                <select id="roadmap-status" value={newRoadmapNode.status} onChange={(e) => {
                   const status = e.target.value;
                   const color = status === 'completed' ? 'var(--success)' : status === 'in-progress' ? 'var(--warning)' : 'var(--text-tertiary)';
                   setNewRoadmapNode({...newRoadmapNode, status, color});
@@ -415,12 +435,12 @@ const ClassesManagement = ({ user }) => {
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem', fontWeight: 'bold' }}>Or Add Manually:</p>
               <form onSubmit={handleManualAdd} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 150px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Email*</label>
-                  <input type="email" value={manualEmail} onChange={e => setManualEmail(e.target.value)} required style={{ width: '100%', padding: '0.5rem', borderRadius: '0.3rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                  <label htmlFor="student-email" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Email*</label>
+                  <input id="student-email" type="email" value={manualEmail} onChange={e => setManualEmail(e.target.value)} required style={{ width: '100%', padding: '0.5rem', borderRadius: '0.3rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                 </div>
                 <div style={{ flex: '1 1 150px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Name</label>
-                  <input type="text" value={manualUsername} onChange={e => setManualUsername(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.3rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                  <label htmlFor="student-name" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Name</label>
+                  <input id="student-name" type="text" value={manualUsername} onChange={e => setManualUsername(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.3rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                 </div>
                 <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>Add</button>
               </form>
@@ -459,12 +479,12 @@ const ClassesManagement = ({ user }) => {
         </h3>
         <form onSubmit={handleSaveClass} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Class Name</label>
-            <input type="text" placeholder="e.g. Section A" value={className} onChange={(e) => setClassName(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+            <label htmlFor="class-name" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Class Name</label>
+            <input id="class-name" type="text" placeholder="e.g. Section A" value={className} onChange={(e) => setClassName(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
           </div>
           <div style={{ flex: '1 1 200px' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Academic Year</label>
-            <input type="text" placeholder="e.g. 2024-2025" value={classYear} onChange={(e) => setClassYear(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+            <label htmlFor="class-year" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Academic Year</label>
+            <input id="class-year" type="text" placeholder="e.g. 2024-2025" value={classYear} onChange={(e) => setClassYear(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
           </div>
           <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem 2rem', height: '42px' }}>
             {editingId ? 'Update' : 'Create'}
@@ -488,7 +508,7 @@ const ClassesManagement = ({ user }) => {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button onClick={() => { setEditingId(cls._id); setClassName(cls.name); setClassYear(cls.year); }} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><Edit2 size={16}/></button>
-                  <button onClick={() => handleDeleteClass(cls._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}><Trash2 size={16}/></button>
+                  <button onClick={() => requestDeleteClass(cls._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}><Trash2 size={16}/></button>
                 </div>
               </div>
 
@@ -509,6 +529,20 @@ const ClassesManagement = ({ user }) => {
           {classesList.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No classes created yet.</p>}
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Delete Class?"
+        message="Are you sure you want to delete this class? All assigned students will be unassigned from this class. This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={handleDeleteClass}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setClassToDelete(null);
+        }}
+      />
     </div>
   );
 };

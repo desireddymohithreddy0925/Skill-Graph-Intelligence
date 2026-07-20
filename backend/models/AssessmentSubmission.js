@@ -5,7 +5,7 @@ const assessmentSubmissionSchema = new mongoose.Schema({
   studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   answers: [{
     questionIndex: { type: Number, required: true },
-    selectedOption: { type: String }
+    selectedOption: { type: String, maxLength: 5000 }
   }],
   score: { type: Number, default: 0 },
   totalQuestions: { type: Number, default: 0 },

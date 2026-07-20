@@ -5,6 +5,7 @@ import SystemCheck from './SystemCheck';
 import LiveInterview from './LiveInterview';
 import AnalysisReport from './AnalysisReport';
 import { VivaAPI } from '../../api/client';
+import toast from 'react-hot-toast';
 
 const VivaFlow = ({ onViewReport }) => {
   const [stage, setStage] = useState('subject-selection');
@@ -17,7 +18,7 @@ const VivaFlow = ({ onViewReport }) => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && stage === 'live-interview') {
-        alert("Tab switching is not allowed during the interview. You are being redirected to the start.");
+        toast.error("Tab switching is not allowed during the interview. You are being redirected to the start.");
         handleReturnHome();
       }
     };

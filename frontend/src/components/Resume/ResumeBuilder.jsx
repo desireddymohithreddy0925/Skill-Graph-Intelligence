@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertTriangle, ChevronRight, Zap } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const ResumeBuilder = ({ user }) => {
   const [pastResume, setPastResume] = useState(null);
@@ -17,7 +18,7 @@ const ResumeBuilder = ({ user }) => {
 
   const handleAnalyze = async () => {
     if (!pastResume || !presentResume) {
-      alert("Please upload both past and present resumes for comparison.");
+      toast.error("Please upload both past and present resumes for comparison.");
       return;
     }
     
@@ -25,7 +26,7 @@ const ResumeBuilder = ({ user }) => {
     
     try {
       // Create FormData if we were really uploading files, but we just mock for now
-      const res = await fetch('http://localhost:5001/api/resume/analyze', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/resume/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

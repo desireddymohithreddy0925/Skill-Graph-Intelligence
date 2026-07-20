@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, User, Briefcase, BarChart2, Building } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import Profile from './Profile';
 import { DashboardAPI } from '../../api/client';
 import './Dashboard.css'; // Reuse Dashboard styles where possible
@@ -29,6 +31,10 @@ const StaffDashboard = ({ user }) => {
   const [studentRoadmap, setStudentRoadmap] = useState([]);
   const [newRoadmapNode, setNewRoadmapNode] = useState({ title: '', status: 'locked', color: 'var(--text-tertiary)' });
   
+  // Demote user state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [userToDemote, setUserToDemote] = useState(null);
+
   useEffect(() => {
     fetchUsers();
     if (['admin', 'sub admin', 'manager'].includes(user?.role)) {
@@ -46,7 +52,7 @@ const StaffDashboard = ({ user }) => {
 
   const fetchRoles = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/roles');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/roles');
       const data = await res.json();
       setRoles(data);
     } catch (err) { console.error(err); }
@@ -54,7 +60,7 @@ const StaffDashboard = ({ user }) => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/profile/all');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/profile/all');
       const data = await res.json();
       setUsers(data);
     } catch (err) {
@@ -76,7 +82,7 @@ const StaffDashboard = ({ user }) => {
   const handleOpenRoadmap = async (u) => {
     setSelectedUser(u);
     try {
-      const res = await fetch(`http://localhost:5001/api/dashboard/roadmap/${u._id}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/${u._id}`);
       if(res.ok) {
         const data = await res.json();
         setStudentRoadmap(data.skillRoadmap || []);
@@ -114,7 +120,7 @@ const StaffDashboard = ({ user }) => {
                 <button className="btn btn-secondary" onClick={() => setIsAssigning(false)}>Cancel</button>
                 <button className="btn btn-primary" onClick={async () => {
                   try {
-                    await fetch('http://localhost:5001/api/assignments', {
+                    await fetch(import.meta.env.VITE_BASE_URL + '/api/assignments', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ mentorId: user._id, studentId: selectedUser._id, title: taskTitle, description: taskDesc })
@@ -122,8 +128,8 @@ const StaffDashboard = ({ user }) => {
                     setIsAssigning(false);
                     setTaskTitle('');
                     setTaskDesc('');
-                    alert('Task assigned successfully!');
-                  } catch (err) { console.error(err); }
+                    toast.success('Task assigned successfully!');
+                  } catch (err) { console.error(err); toast.error('Failed to assign task'); }
                 }}>Assign Task</button>
               </div>
             </div>
@@ -145,13 +151,13 @@ const StaffDashboard = ({ user }) => {
             <h2 style={{ color: 'var(--accent-primary)', margin: 0 }}>Skill Roadmap: {selectedUser.personalInfo?.username || selectedUser.email}</h2>
             <button className="btn btn-primary" onClick={async () => {
               try {
-                const res = await fetch(`http://localhost:5001/api/dashboard/roadmap/${selectedUser._id}`, {
+                const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/${selectedUser._id}`, {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ skillRoadmap: studentRoadmap })
                 });
-                if(res.ok) alert('Roadmap updated successfully');
-              } catch(err) { console.error(err); alert('Failed to update'); }
+                if(res.ok) toast.success('Roadmap updated successfully');
+              } catch(err) { console.error(err); toast.error('Failed to update roadmap'); }
             }}>Save Changes</button>
           </div>
           
@@ -247,61 +253,52 @@ const StaffDashboard = ({ user }) => {
             <div className="users-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
               {filteredUsers.map(u => (
                 <div key={u._id} className="user-card" style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-primary)', fontWeight: 'bold', fontSize: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>
+                    <div style={{ flexShrink: 0, width: '50px', height: '50px', borderRadius: '50%', background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-primary)', fontWeight: 'bold', fontSize: '1.5rem' }}>
                       {u.personalInfo?.username ? u.personalInfo.username[0].toUpperCase() : (u.email ? u.email[0].toUpperCase() : '?')}
                     </div>
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{u.personalInfo?.username || 'Unnamed'}</h3>
-                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{u.email || 'No email'}</p>
+                    <div style={{ overflow: 'hidden' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.personalInfo?.username || 'Unnamed'}</h3>
+                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.email || 'No email'}</p>
                     </div>
                   </div>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                    <span style={{ 
-                      padding: '0.25rem 0.75rem', 
-                      borderRadius: '1rem', 
-                      fontSize: '0.8rem', 
-                      fontWeight: 'bold',
-                      background: ['admin', 'sub admin', 'manager'].includes(u.role) ? 'rgba(255, 50, 50, 0.2)' : u.role === 'mentor' ? 'rgba(50, 150, 255, 0.2)' : 'rgba(50, 255, 100, 0.2)',
-                      color: ['admin', 'sub admin', 'manager'].includes(u.role) ? '#ff6b6b' : u.role === 'mentor' ? '#4dabf7' : '#51cf66'
-                    }}>
-                      {(u.role || 'unknown').toUpperCase()}
-                    </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: 'auto' }}>
+                    <div style={{ display: 'flex' }}>
+                      <span style={{ 
+                        padding: '0.25rem 0.75rem', 
+                        borderRadius: '1rem', 
+                        fontSize: '0.8rem', 
+                        fontWeight: 'bold',
+                        whiteSpace: 'nowrap',
+                        background: ['admin', 'sub admin', 'manager'].includes(u.role) ? 'rgba(255, 50, 50, 0.2)' : u.role === 'mentor' ? 'rgba(50, 150, 255, 0.2)' : 'rgba(50, 255, 100, 0.2)',
+                        color: ['admin', 'sub admin', 'manager'].includes(u.role) ? '#ff6b6b' : u.role === 'mentor' ? '#4dabf7' : '#51cf66'
+                      }}>
+                        {(u.role || 'unknown').toUpperCase()}
+                      </span>
+                    </div>
                     
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       {['admin', 'sub admin', 'manager'].includes(user?.role) && u.role !== 'student' && u.email !== user?.email && (
                         <button 
-                          onClick={async () => {
-                            if (window.confirm(`Are you sure you want to demote ${u.personalInfo?.username || u.email} to student?`)) {
-                              try {
-                                const res = await fetch('http://localhost:5001/api/roles/assign', {
-                                  method: 'PUT',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ email: u.email, roleName: 'student' })
-                                });
-                                if (res.ok) {
-                                  fetchUsers();
-                                } else {
-                                  alert('Failed to demote user');
-                                }
-                              } catch (err) { console.error(err); }
-                            }
+                          onClick={() => {
+                            setUserToDemote(u);
+                            setConfirmModalOpen(true);
                           }}
-                          style={{ background: 'transparent', border: '1px solid var(--error)', color: 'var(--error)', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}
+                          style={{ flex: 1, minWidth: '80px', background: 'transparent', border: '1px solid var(--error)', color: 'var(--error)', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem', textAlign: 'center' }}
                           title="Demote to Student"
                         >
                           Demote
                         </button>
                       )}
                       {['mentor', 'admin', 'sub admin', 'manager'].includes(user.role) && (
-                        <button onClick={() => { setSelectedUser(u); setIsAssigning(true); }} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}>
+                        <button onClick={() => { setSelectedUser(u); setIsAssigning(true); }} style={{ flex: 1, minWidth: '80px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                           Assign Task
                         </button>
                       )}
                       <button  
                         onClick={() => setSelectedUser(u)}
-                        style={{ background: 'transparent', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}
+                        style={{ flex: 1, minWidth: '100px', background: 'transparent', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap' }}
                       >
                         View Details
                       </button>
@@ -331,7 +328,7 @@ const StaffDashboard = ({ user }) => {
             <button className="btn btn-primary" onClick={async () => {
               if (!newRoleName.trim()) return;
               try {
-                const res = await fetch('http://localhost:5001/api/roles', {
+                const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/roles', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ name: newRoleName })
@@ -339,10 +336,11 @@ const StaffDashboard = ({ user }) => {
                 if (res.ok) {
                   setNewRoleName('');
                   fetchRoles();
+                  toast.success('Role created successfully');
                 } else {
-                  alert('Error creating role. Maybe it already exists.');
+                  toast.error('Error creating role. Maybe it already exists.');
                 }
-              } catch (err) { console.error(err); }
+              } catch (err) { console.error(err); toast.error('Error creating role'); }
             }}>Create Role</button>
           </div>
 
@@ -352,7 +350,7 @@ const StaffDashboard = ({ user }) => {
                 <span>{r.name}</span>
                 <button onClick={async () => {
                   try {
-                    await fetch(`http://localhost:5001/api/roles/${r._id}`, { method: 'DELETE' });
+                    await fetch(`${import.meta.env.VITE_BASE_URL}/api/roles/${r._id}`, { method: 'DELETE' });
                     fetchRoles();
                   } catch(err) { console.error(err); }
                 }} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
@@ -384,20 +382,20 @@ const StaffDashboard = ({ user }) => {
             <button className="btn btn-primary" onClick={async () => {
               if (!assignEmail.trim()) return;
               try {
-                const res = await fetch('http://localhost:5001/api/roles/assign', {
+                const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/roles/assign', {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ email: assignEmail, roleName: assignRole })
                 });
                 const data = await res.json();
                 if (res.ok) {
-                  alert(data.message);
+                  toast.success(data.message || 'Role assigned successfully');
                   setAssignEmail('');
                   fetchUsers(); // Refresh the list
                 } else {
-                  alert(data.error || 'Error assigning role');
+                  toast.error(data.error || 'Error assigning role');
                 }
-              } catch (err) { console.error(err); }
+              } catch (err) { console.error(err); toast.error('Error assigning role'); }
             }}>Assign Role</button>
           </div>
         </div>
@@ -433,7 +431,8 @@ const StaffDashboard = ({ user }) => {
                 setNewCompanyName('');
                 setNewCompanySkills('');
                 fetchCompaniesAdmin();
-              } catch (err) { console.error(err); alert('Error saving company'); }
+                toast.success('Company saved successfully');
+              } catch (err) { console.error(err); toast.error('Error saving company'); }
             }}>Save Company</button>
           </div>
 
@@ -461,6 +460,41 @@ const StaffDashboard = ({ user }) => {
           </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Demote User?"
+        message={`Are you sure you want to demote ${userToDemote?.personalInfo?.username || userToDemote?.email} to student?`}
+        confirmText="Yes, Demote"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={async () => {
+          if (!userToDemote) return;
+          try {
+            const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/roles/assign', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: userToDemote.email, roleName: 'student' })
+            });
+            if (res.ok) {
+              fetchUsers();
+              toast.success(`Demoted ${userToDemote.personalInfo?.username || userToDemote.email} to student`);
+            } else {
+              toast.error('Failed to demote user');
+            }
+          } catch (err) { 
+            console.error(err); 
+            toast.error('Failed to demote user');
+          } finally {
+            setConfirmModalOpen(false);
+            setUserToDemote(null);
+          }
+        }}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setUserToDemote(null);
+        }}
+      />
     </div>
   );
 };

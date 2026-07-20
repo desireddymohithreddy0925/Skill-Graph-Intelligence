@@ -44,7 +44,7 @@ Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/lms-skill-intelligence-meter.git
+git clone https://github.com/desireddymohithreddy0925/lms-skill-intelligence-meter.git
 cd lms-skill-intelligence-meter
 ```
 
@@ -79,7 +79,7 @@ npm run dev
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome! 
-Feel free to check [issues page](https://github.com/your-username/lms-skill-intelligence-meter/issues).
+Feel free to check [issues page](https://github.com/desireddymohithreddy0925/lms-skill-intelligence-meter/issues).
 
 ## 📝 License
 

@@ -15,10 +15,14 @@ const AssessmentsList = ({ user, setActiveTab, setSelectedAssessmentId }) => {
 
   const fetchAssessments = async () => {
     try {
-      const endpoint = isStaff ? '/api/assessments/admin' : '/api/assessments';
-      const res = await fetch(`http://localhost:5001${endpoint}`);
+      const endpoint = isStaff 
+        ? `${import.meta.env.VITE_BASE_URL}/api/assessments/admin` 
+        : `${import.meta.env.VITE_BASE_URL}/api/assessments`;
+      const res = await fetch(endpoint, {
+        credentials: 'include'
+      });
       const data = await res.json();
-      setAssessments(data);
+      setAssessments(data.data || data);
     } catch (err) {
       console.error(err);
     } finally {

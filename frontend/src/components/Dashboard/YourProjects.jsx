@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Code2, Link, Cloud, Plus, ExternalLink, Trash2, Search, User, Hash } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import './YourProjects.css';
 
 const YourProjects = ({ user }) => {
@@ -14,15 +16,15 @@ const YourProjects = ({ user }) => {
     onedriveLink: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Delete confirm state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
 
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      const url = new URL('http://localhost:5001/api/projects');
-      url.searchParams.append('email', user.email);
-      url.searchParams.append('role', user.role);
-      
-      const response = await fetch(url);
+      const response = await fetch(import.meta.env.VITE_BASE_URL + '/api/projects');
       if (response.ok) {
         const data = await response.json();
         setProjects(data);
@@ -50,7 +52,7 @@ const YourProjects = ({ user }) => {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('http://localhost:5001/api/projects', {
+      const response = await fetch(import.meta.env.VITE_BASE_URL + '/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -62,29 +64,43 @@ const YourProjects = ({ user }) => {
       if (response.ok) {
         setFormData({ projectName: '', studentName: '', rollNumber: '', githubLink: '', onedriveLink: '' });
         fetchProjects();
+        toast.success('Project added successfully');
       } else {
-        alert('Failed to add project');
+        toast.error('Failed to add project');
       }
     } catch (error) {
       console.error('Error adding project:', error);
+      toast.error('Error adding project');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
+  const requestDelete = (id) => {
+    setProjectToDelete(id);
+    setConfirmModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!projectToDelete) return;
     
     try {
-      const response = await fetch(`http://localhost:5001/api/projects/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/api/projects/${projectToDelete}`, {
         method: 'DELETE'
       });
       
       if (response.ok) {
         fetchProjects();
+        toast.success('Project deleted successfully');
+      } else {
+        toast.error('Failed to delete project');
       }
     } catch (error) {
       console.error('Error deleting project:', error);
+      toast.error('Error deleting project');
+    } finally {
+      setConfirmModalOpen(false);
+      setProjectToDelete(null);
     }
   };
 
@@ -122,8 +138,9 @@ const YourProjects = ({ user }) => {
           </h2>
           <form className="add-project-form" onSubmit={handleSubmit}>
             <div className="form-group full-width">
-              <label>Project Name</label>
+              <label htmlFor="project-name">Project Name</label>
               <input 
+                id="project-name"
                 type="text" 
                 name="projectName"
                 value={formData.projectName}
@@ -133,8 +150,9 @@ const YourProjects = ({ user }) => {
               />
             </div>
             <div className="form-group">
-              <label>Student Name</label>
+              <label htmlFor="student-name">Student Name</label>
               <input 
+                id="student-name"
                 type="text" 
                 name="studentName"
                 value={formData.studentName}
@@ -143,8 +161,9 @@ const YourProjects = ({ user }) => {
               />
             </div>
             <div className="form-group">
-              <label>Roll Number</label>
+              <label htmlFor="roll-number">Roll Number</label>
               <input 
+                id="roll-number"
                 type="text" 
                 name="rollNumber"
                 value={formData.rollNumber}
@@ -153,8 +172,9 @@ const YourProjects = ({ user }) => {
               />
             </div>
             <div className="form-group">
-              <label>GitHub Repository URL</label>
+              <label htmlFor="github-link">GitHub Repository URL</label>
               <input 
+                id="github-link"
                 type="url" 
                 name="githubLink"
                 value={formData.githubLink}
@@ -164,8 +184,9 @@ const YourProjects = ({ user }) => {
               />
             </div>
             <div className="form-group">
-              <label>OneDrive Link</label>
+              <label htmlFor="onedrive-link">OneDrive Link</label>
               <input 
+                id="onedrive-link"
                 type="url" 
                 name="onedriveLink"
                 value={formData.onedriveLink}
@@ -226,7 +247,7 @@ const YourProjects = ({ user }) => {
                   </div>
                   {!['admin', 'sub admin', 'manager'].includes(user?.role) && (
                     <button 
-                      onClick={() => handleDelete(project._id)}
+                      onClick={() => requestDelete(project._id)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}
                       title="Delete Project"
                     >
@@ -252,6 +273,20 @@ const YourProjects = ({ user }) => {
           </div>
         )}
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Delete Project?"
+        message="Are you sure you want to delete this project submission? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setProjectToDelete(null);
+        }}
+      />
     </div>
   );
 };

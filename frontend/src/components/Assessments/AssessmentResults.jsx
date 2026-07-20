@@ -22,7 +22,9 @@ const AssessmentResults = ({ assessmentId, setActiveTab }) => {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
+        credentials: 'include'
+      });
       const data = await res.json();
       setClasses(data);
     } catch(err) { console.error(err); }
@@ -30,7 +32,9 @@ const AssessmentResults = ({ assessmentId, setActiveTab }) => {
 
   const fetchAssessmentDetails = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/assessments/${assessmentId}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}`, {
+        credentials: 'include'
+      });
       const data = await res.json();
       setAssessmentDetails(data);
     } catch(err) { console.error(err); }
@@ -39,11 +43,13 @@ const AssessmentResults = ({ assessmentId, setActiveTab }) => {
   const fetchResults = async () => {
     setLoading(true);
     try {
-      let url = `http://localhost:5001/api/assessments/${assessmentId}/leaderboard`;
+      let url = `${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}/leaderboard`;
       if (selectedClassId) {
         url += `?classId=${selectedClassId}`;
       }
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        credentials: 'include'
+      });
       const data = await res.json();
       setResults(data);
     } catch(err) {

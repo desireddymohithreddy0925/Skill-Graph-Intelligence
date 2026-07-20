@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Save, ArrowLeft, Upload } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useUnsavedChanges } from '../../context/UnsavedChangesContext';
 import '../Dashboard/Dashboard.css';
 
 const CreateAssessment = ({ user, setActiveTab }) => {
@@ -11,13 +13,26 @@ const CreateAssessment = ({ user, setActiveTab }) => {
   const [availableClasses, setAvailableClasses] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   
+  const { setHasUnsavedChanges } = useUnsavedChanges();
+
+  useEffect(() => {
+    // If any field deviates from its initial empty state, mark as dirty
+    if (title || description || questions.length > 1 || questions[0].questionText !== '' || timeLimit > 0) {
+      setHasUnsavedChanges(true);
+    } else {
+      setHasUnsavedChanges(false);
+    }
+  }, [title, description, questions, timeLimit, setHasUnsavedChanges]);
+  
   useEffect(() => {
     fetchClasses();
   }, []);
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
+        credentials: 'include'
+      });
       const data = await res.json();
       setAvailableClasses(data);
     } catch(err) { console.error(err); }
@@ -58,24 +73,25 @@ const CreateAssessment = ({ user, setActiveTab }) => {
     formData.append('file', file);
     
     try {
-      const res = await fetch('http://localhost:5001/api/assessments/upload-pdf', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/assessments/upload-pdf', {
         method: 'POST',
+        credentials: 'include',
         body: formData
       });
       const data = await res.json();
       if (res.ok) {
         if (data.questions && data.questions.length > 0) {
           setQuestions(data.questions);
-          alert(`Successfully parsed ${data.questions.length} questions from PDF!`);
+          toast.success(`Successfully parsed ${data.questions.length} questions from PDF!`);
         } else {
-          alert('Could not find any questions in the expected format in this PDF.');
+          toast.error('Could not find any questions in the expected format in this PDF.');
         }
       } else {
-        alert(data.error || 'Failed to parse PDF');
+        toast.error(data.error || 'Failed to parse PDF');
       }
     } catch (err) {
       console.error(err);
-      alert('Error uploading PDF');
+      toast.error('Error uploading PDF');
     } finally {
       setIsUploading(false);
       e.target.value = ''; // Reset input
@@ -83,29 +99,30 @@ const CreateAssessment = ({ user, setActiveTab }) => {
   };
 
   const handleSave = async () => {
-    if (!title) return alert('Title is required');
+    if (!title) { toast.error('Title is required'); return; }
     // Basic validation
     for (let i = 0; i < questions.length; i++) {
-      if (!questions[i].questionText) return alert(`Question ${i+1} text is required`);
-      if (type === 'mcq' && !questions[i].correctAnswer) return alert(`Question ${i+1} correct answer is required`);
+      if (!questions[i].questionText) { toast.error(`Question ${i+1} text is required`); return; }
+      if (type === 'mcq' && !questions[i].correctAnswer) { toast.error(`Question ${i+1} correct answer is required`); return; }
     }
 
     try {
-      const res = await fetch('http://localhost:5001/api/assessments', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/assessments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ title, description, type, timeLimit, questions, targetClasses, createdBy: user._id || user.id })
       });
       const data = await res.json();
       if (res.ok) {
-        alert('Assessment created successfully!');
+        toast.success('Assessment created successfully!');
+        setHasUnsavedChanges(false); // Clear before navigating
         setActiveTab('assessments');
       } else {
-        alert(data.error || 'Failed to create assessment');
+        toast.error(data.error || 'Failed to create assessment');
       }
     } catch (err) {
       console.error(err);
-      alert('Error creating assessment');
+      toast.error('Error creating assessment');
     }
   };
 
@@ -124,8 +141,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Title</label>
+            <label htmlFor="assessment-title" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Title</label>
             <input 
+              id="assessment-title"
               type="text" 
               className="transparent-input"
               value={title} 
@@ -135,8 +153,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
           </div>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Description</label>
+            <label htmlFor="assessment-description" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Description</label>
             <textarea 
+              id="assessment-description"
               className="transparent-input"
               value={description} 
               onChange={e => setDescription(e.target.value)} 
@@ -145,8 +164,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Type</label>
+            <label htmlFor="assessment-type" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Type</label>
             <select 
+              id="assessment-type"
               className="transparent-input"
               value={type} 
               onChange={e => setType(e.target.value)}
@@ -157,8 +177,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Time Limit (Minutes)</label>
+            <label htmlFor="assessment-time-limit" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Time Limit (Minutes)</label>
             <input 
+              id="assessment-time-limit"
               type="number" 
               className="transparent-input"
               value={timeLimit} 
@@ -170,8 +191,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
           </div>
 
           <div style={{ flex: '1 1 200px' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Target Classes</label>
+            <label htmlFor="assessment-target-classes" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Target Classes</label>
             <select 
+              id="assessment-target-classes"
               multiple 
               className="transparent-input"
               value={targetClasses} 
@@ -194,6 +216,7 @@ const CreateAssessment = ({ user, setActiveTab }) => {
               type="file" 
               accept="application/pdf" 
               onChange={handleFileUpload} 
+              aria-label="Upload PDF"
               style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
               disabled={isUploading}
             />
@@ -212,8 +235,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
               <Trash2 size={20} />
             </button>
             
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Question {qIndex + 1}</label>
+            <label htmlFor={`question-${qIndex}-text`} style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Question {qIndex + 1}</label>
             <textarea 
+              id={`question-${qIndex}-text`}
               className="transparent-input"
               value={q.questionText}
               onChange={e => handleQuestionChange(qIndex, 'questionText', e.target.value)}
@@ -223,11 +247,12 @@ const CreateAssessment = ({ user, setActiveTab }) => {
 
             {type === 'mcq' && (
               <div style={{ paddingLeft: '1rem', borderLeft: '2px solid var(--accent-primary)' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Options</label>
+                <span style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Options</span>
                 {q.options.map((opt, oIndex) => (
                   <div key={oIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <span style={{ color: 'var(--text-tertiary)' }}>{String.fromCharCode(65 + oIndex)}.</span>
+                    <label htmlFor={`question-${qIndex}-option-${oIndex}`} style={{ color: 'var(--text-tertiary)' }}>{String.fromCharCode(65 + oIndex)}.</label>
                     <input 
+                      id={`question-${qIndex}-option-${oIndex}`}
                       type="text"
                       className="transparent-input"
                       value={opt}
@@ -235,12 +260,15 @@ const CreateAssessment = ({ user, setActiveTab }) => {
                       placeholder={`Option ${oIndex + 1}`}
                       style={{ flex: 1, padding: '0.5rem', borderRadius: '0.25rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                     />
+                    <label htmlFor={`correct-${qIndex}-${oIndex}`} className="sr-only" style={{ display: 'none' }}>Mark Option {String.fromCharCode(65 + oIndex)} as correct</label>
                     <input 
+                      id={`correct-${qIndex}-${oIndex}`}
                       type="radio" 
                       name={`correct-${qIndex}`} 
                       checked={q.correctAnswer === opt && opt !== ''}
                       onChange={() => handleQuestionChange(qIndex, 'correctAnswer', opt)}
                       title="Mark as correct answer"
+                      aria-label={`Mark Option ${String.fromCharCode(65 + oIndex)} as correct`}
                     />
                   </div>
                 ))}

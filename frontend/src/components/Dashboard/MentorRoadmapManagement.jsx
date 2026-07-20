@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Trash2, Network } from 'lucide-react';
+import toast from 'react-hot-toast';
 import '../Dashboard/Dashboard.css';
 
 const MentorRoadmapManagement = () => {
@@ -22,8 +23,8 @@ const MentorRoadmapManagement = () => {
   const fetchStudentsAndClasses = async () => {
     try {
       const [uRes, cRes] = await Promise.all([
-        fetch('http://localhost:5001/api/profile/all'),
-        fetch('http://localhost:5001/api/classes')
+        fetch(import.meta.env.VITE_BASE_URL + '/api/profile/all'),
+        fetch(import.meta.env.VITE_BASE_URL + '/api/classes')
       ]);
       const uData = await uRes.json();
       const cData = await cRes.json();
@@ -39,7 +40,7 @@ const MentorRoadmapManagement = () => {
   const handleOpenRoadmap = async (u) => {
     setSelectedStudent(u);
     try {
-      const res = await fetch(`http://localhost:5001/api/dashboard/roadmap/${u._id}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/${u._id}`);
       if (res.ok) {
         const data = await res.json();
         setStudentRoadmap(data.skillRoadmap || []);
@@ -50,23 +51,23 @@ const MentorRoadmapManagement = () => {
   const handleSaveRoadmap = async () => {
     try {
       if (activeTab === 'student') {
-        const res = await fetch(`http://localhost:5001/api/dashboard/roadmap/${selectedStudent._id}`, {
+        const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/${selectedStudent._id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ skillRoadmap: studentRoadmap })
         });
-        if (res.ok) alert('Roadmap updated successfully');
+        if (res.ok) toast.success('Roadmap updated successfully');
       } else {
-        const res = await fetch(`http://localhost:5001/api/dashboard/roadmap/class/${selectedClass._id}`, {
+        const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/class/${selectedClass._id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ skillRoadmap: studentRoadmap })
         });
-        if (res.ok) alert('Roadmap successfully broadcasted to entire class!');
+        if (res.ok) toast.success('Roadmap successfully broadcasted to entire class!');
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to update roadmap');
+      toast.error('Failed to update roadmap');
     }
   };
 

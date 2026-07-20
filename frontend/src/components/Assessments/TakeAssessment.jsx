@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Loading from '../ui/Loading';
+import ConfirmModal from '../ui/ConfirmModal';
+import toast from 'react-hot-toast';
 import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import '../Dashboard/Dashboard.css';
 
@@ -9,16 +11,19 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   
   // Anti-cheat & Timer state
-  const [tabSwitches, setTabSwitches] = useState(0);
-  const tabSwitchesRef = useRef(0);
+  const [_vId, _setVId] = useState(0);
+  const _vIdRef = useRef(0);
+  const [_at, _setAt] = useState('');
   const [warningMsg, setWarningMsg] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
   
   // Pre-assessment check state
   const [step, setStep] = useState('network_check'); // 'network_check', 'assessment'
   const [internetStatus, setInternetStatus] = useState('checking'); // 'checking', 'poor', 'good'
+  const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
 
   const checkInternet = async () => {
     setInternetStatus('checking');
@@ -51,18 +56,18 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        tabSwitchesRef.current += 1;
-        const currentSwitches = tabSwitchesRef.current;
-        setTabSwitches(currentSwitches);
+        _vIdRef.current += 1;
+        const currentSwitches = _vIdRef.current;
+        _setVId(currentSwitches);
 
         if (currentSwitches === 1) {
           setWarningMsg('WARNING: You have switched tabs. Switching tabs is not allowed during the assessment. If you switch tabs 3 times, your assessment will be automatically submitted.');
-          alert('WARNING: You have switched tabs. Switching tabs is not allowed during the assessment.');
+          toast.error('WARNING: You have switched tabs. Switching tabs is not allowed during the assessment.');
         } else if (currentSwitches === 2) {
           setWarningMsg('FINAL WARNING: You have switched tabs 2 times! One more time and your assessment will be auto-submitted!');
-          alert('FINAL WARNING: You have switched tabs 2 times! One more time and your assessment will be auto-submitted!');
+          toast.error('FINAL WARNING: You have switched tabs 2 times! One more time and your assessment will be auto-submitted!');
         } else if (currentSwitches >= 3) {
-          alert('You have switched tabs 3 times. Your assessment is being automatically submitted.');
+          toast.error('You have switched tabs 3 times. Your assessment is being automatically submitted.');
           submitAssessment(true);
         }
       }
@@ -76,8 +81,14 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
 
   const fetchAssessment = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/assessments/${assessmentId}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}`, {
+        credentials: 'include'
+      });
       const data = await res.json();
+      
+      if (data._at) {
+        _setAt(data._at);
+      }
       
       // Jumble questions and options
       if (data.questions) {
@@ -109,7 +120,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
     if (submitted || timeLeft === null) return;
 
     if (timeLeft <= 0) {
-      alert('Time is up! Your assessment is being automatically submitted.');
+      toast.error('Time is up! Your assessment is being automatically submitted.');
       submitAssessment(true);
       return;
     }
@@ -130,19 +141,27 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
   const submitAssessment = async (isAutoSubmit = false) => {
     if (submitted) return;
     
-    if (!isAutoSubmit && !window.confirm('Are you sure you want to submit your assessment?')) {
+    if (!isAutoSubmit) {
+      setConfirmModalOpen(true);
       return;
     }
+    
+    await executeSubmission(isAutoSubmit);
+  };
+
+  const executeSubmission = async (isAutoSubmit = false) => {
+    setConfirmModalOpen(false);
 
     try {
-      const res = await fetch(`http://localhost:5001/api/assessments/${assessmentId}/submit`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
           studentId: user._id,
           answers,
-          tabSwitches: tabSwitchesRef.current,
-          autoSubmitted: isAutoSubmit
+          _vId: _vIdRef.current,
+          autoSubmitted: isAutoSubmit,
+          _at
         })
       });
       const data = await res.json();
@@ -158,23 +177,32 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
       }
     } catch (err) {
       console.error(err);
-      alert('Error submitting assessment');
+      toast.error('Error submitting assessment');
     }
   };
 
-  if (loading) return <Loading message="Loading assessment details..." fullScreen={true} />;
+  if (loading) return <Loading message="Loading assessment details..." fullScreen={false} />;
   if (!assessment) return <div style={{ padding: '2rem' }}>Assessment not found.</div>;
+
+  const requestFullscreen = () => {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().then(() => setShowFullscreenWarning(false)).catch(err => {
+        console.log(err);
+        setShowFullscreenWarning(true);
+      });
+    } else if (elem.webkitRequestFullscreen) {
+      const p = elem.webkitRequestFullscreen();
+      if (p && p.catch) p.then(() => setShowFullscreenWarning(false)).catch(() => setShowFullscreenWarning(true));
+    } else if (elem.msRequestFullscreen) {
+      const p = elem.msRequestFullscreen();
+      if (p && p.catch) p.then(() => setShowFullscreenWarning(false)).catch(() => setShowFullscreenWarning(true));
+    }
+  };
 
   const handleStartAssessment = () => {
     setStep('assessment');
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen();
-    }
+    requestFullscreen();
   };
 
   if (step === 'network_check') {
@@ -257,7 +285,11 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
         </div>
         
         {timeLeft !== null && (
-          <div style={{ background: 'var(--bg-tertiary)', padding: '1rem 1.5rem', borderRadius: '0.5rem', border: `1px solid ${timeLeft < 60 ? 'var(--error)' : 'var(--accent-primary)'}`, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div 
+            style={{ background: 'var(--bg-tertiary)', padding: '1rem 1.5rem', borderRadius: '0.5rem', border: `1px solid ${timeLeft < 60 ? 'var(--error)' : 'var(--accent-primary)'}`, display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+            role="timer"
+            aria-label={`Time remaining: ${formatTime(timeLeft)}`}
+          >
             <Clock size={24} color={timeLeft < 60 ? 'var(--error)' : 'var(--accent-primary)'} />
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: timeLeft < 60 ? 'var(--error)' : 'var(--text-primary)' }}>
               {formatTime(timeLeft)}
@@ -273,30 +305,46 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
           </div>
         )}
 
+      {showFullscreenWarning && (
+        <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255, 171, 0, 0.1)', border: '1px solid var(--warning)', borderRadius: '0.5rem', color: 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertTriangle size={20} />
+            <span style={{ fontWeight: 'bold' }}>Fullscreen mode is recommended for the best experience.</span>
+          </div>
+          <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }} onClick={requestFullscreen}>
+            Enter Fullscreen
+          </button>
+        </div>
+      )}
+
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {assessment.questions.map((q, qIndex) => (
           <div key={qIndex} style={{ background: 'var(--bg-secondary)', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ marginBottom: '1.5rem', lineHeight: '1.5' }}>
-              <span style={{ color: 'var(--accent-primary)', marginRight: '0.5rem' }}>Q{qIndex + 1}.</span> 
-              {q.questionText}
+            <h3 id={`question-${qIndex}-title`} style={{ marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              <span style={{ color: 'var(--accent-primary)', marginRight: '0.5rem' }} aria-hidden="true">Q{qIndex + 1}.</span> 
+              <span aria-label={`Question ${qIndex + 1}: ${q.questionText}`}>{q.questionText}</span>
             </h3>
             
             {assessment.type === 'mcq' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {q.options.map((opt, oIndex) => (
-                  <label key={oIndex} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: answers[qIndex]?.selectedOption === opt ? 'rgba(77, 171, 247, 0.1)' : 'var(--bg-tertiary)', border: `1px solid ${answers[qIndex]?.selectedOption === opt ? 'var(--accent-primary)' : 'var(--border-color)'}`, borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s' }}>
-                    <input 
-                      type="radio" 
-                      name={`question-${qIndex}`} 
-                      value={opt}
-                      checked={answers[qIndex]?.selectedOption === opt}
-                      onChange={() => handleSelectOption(qIndex, opt)}
-                      style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--accent-primary)' }}
-                    />
-                    <span style={{ fontSize: '1.05rem' }}>{opt}</span>
-                  </label>
-                ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} role="radiogroup" aria-labelledby={`question-${qIndex}-title`}>
+                {q.options.map((opt, oIndex) => {
+                  const inputId = `question-${qIndex}-option-${oIndex}`;
+                  return (
+                    <label key={oIndex} htmlFor={inputId} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: answers[qIndex]?.selectedOption === opt ? 'rgba(77, 171, 247, 0.1)' : 'var(--bg-tertiary)', border: `1px solid ${answers[qIndex]?.selectedOption === opt ? 'var(--accent-primary)' : 'var(--border-color)'}`, borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      <input 
+                        type="radio" 
+                        id={inputId}
+                        name={`question-${qIndex}`} 
+                        value={opt}
+                        checked={answers[qIndex]?.selectedOption === opt}
+                        onChange={() => handleSelectOption(qIndex, opt)}
+                        style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--accent-primary)' }}
+                      />
+                      <span style={{ fontSize: '1.05rem' }}>{opt}</span>
+                    </label>
+                  );
+                })}
               </div>
             ) : (
               <textarea 
@@ -319,6 +367,16 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
           Submit Assessment
         </button>
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Submit Assessment?"
+        message="Are you sure you are ready to submit your assessment? You cannot undo this action."
+        confirmText="Yes, Submit"
+        cancelText="Cancel"
+        onConfirm={() => executeSubmission(false)}
+        onCancel={() => setConfirmModalOpen(false)}
+      />
     </div>
   );
 };

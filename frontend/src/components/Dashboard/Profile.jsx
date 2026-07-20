@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Edit2, Mail, Phone, Calendar, MapPin, Building, GraduationCap, Award, BookOpen, Link, Code2, Search, Check, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import './Profile.css';
 
 const Profile = ({ user, onUpdateUser }) => {
@@ -83,12 +84,14 @@ const Profile = ({ user, onUpdateUser }) => {
         if (onUpdateUser && sectionKey === 'personalInfo') {
           onUpdateUser({ email: updated.email, username: updated.personalInfo?.username });
         }
+        toast.success('Profile updated successfully');
       } else {
         const err = await res.json();
-        alert(err.error || 'Failed to update profile');
+        toast.error(err.error || 'Failed to update profile');
       }
     } catch (err) {
       console.error("Error saving profile:", err);
+      toast.error('Failed to update profile');
     }
   };
 

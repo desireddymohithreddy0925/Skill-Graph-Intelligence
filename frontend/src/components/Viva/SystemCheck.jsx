@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StepperHeader } from './Instructions';
 import { Camera, Mic, Wifi, X, Check, MoreHorizontal } from 'lucide-react';
+import toast from 'react-hot-toast';
 import './SystemCheck.css';
 
 const SystemCheck = ({ onCheckComplete, onCancel }) => {
@@ -54,7 +55,7 @@ const SystemCheck = ({ onCheckComplete, onCancel }) => {
       // clean up stream for now, we just wanted permission to list them
       audioStream.getTracks().forEach(t => t.stop());
     } catch (err) {
-      alert('Microphone access denied or error occurred.');
+      toast.error('Microphone access denied or error occurred.');
     }
   };
 
@@ -79,7 +80,7 @@ const SystemCheck = ({ onCheckComplete, onCancel }) => {
         }
       }, 100);
     } catch (err) {
-      alert('Camera access denied or error occurred.');
+      toast.error('Camera access denied or error occurred.');
     }
   };
 

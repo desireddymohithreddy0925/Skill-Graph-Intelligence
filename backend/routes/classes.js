@@ -6,14 +6,26 @@ const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { verifyToken } = require('../middleware/auth');
+const { requireStaff } = require('../middleware/roles');
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.mimetype === 'application/vnd.ms-excel') {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only CSVs are allowed.'), false);
+    }
+  }
+});
 
 // GET all classes
-router.get('/', async (req, res) => {
+router.get('/', verifyToken, requireStaff, async (req, res) => {
   try {
     const classes = await Class.find().populate('mentors', 'email personalInfo.username');
-    // We also want to return student count for each class
     const classesWithCounts = await Promise.all(classes.map(async (c) => {
       const studentCount = await User.countDocuments({ classId: c._id });
       return { ...c.toObject(), studentCount };
@@ -26,7 +38,7 @@ router.get('/', async (req, res) => {
 });
 
 // CREATE class
-router.post('/', async (req, res) => {
+router.post('/', verifyToken, requireStaff, async (req, res) => {
   try {
     const { name, year } = req.body;
     const newClass = new Class({ name, year });
@@ -38,7 +50,7 @@ router.post('/', async (req, res) => {
 });
 
 // UPDATE class (name/year)
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyToken, requireStaff, async (req, res) => {
   try {
     const { name, year } = req.body;
     const updatedClass = await Class.findByIdAndUpdate(req.params.id, { name, year }, { new: true });
@@ -49,9 +61,8 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE class
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyToken, requireStaff, async (req, res) => {
   try {
-    // Unassign class from all users
     await User.updateMany({ classId: req.params.id }, { classId: null });
     await Class.findByIdAndDelete(req.params.id);
     res.json({ success: true });
@@ -61,7 +72,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // ASSIGN Mentors
-router.put('/:id/mentors', async (req, res) => {
+router.put('/:id/mentors', verifyToken, requireStaff, async (req, res) => {
   try {
     const { mentorIds } = req.body; // array of User ObjectIds
     const updatedClass = await Class.findByIdAndUpdate(req.params.id, { mentors: mentorIds }, { new: true });
@@ -72,7 +83,7 @@ router.put('/:id/mentors', async (req, res) => {
 });
 
 // GET students in class
-router.get('/:id/students', async (req, res) => {
+router.get('/:id/students', verifyToken, requireStaff, async (req, res) => {
   try {
     const students = await User.find({ classId: req.params.id });
     res.json(students);
@@ -82,7 +93,7 @@ router.get('/:id/students', async (req, res) => {
 });
 
 // UPLOAD CSV and assign students to class
-router.post('/:id/upload-csv', upload.single('file'), async (req, res) => {
+router.post('/:id/upload-csv', verifyToken, requireStaff, upload.single('file'), async (req, res) => {
   try {
     const classId = req.params.id;
     const results = [];
@@ -91,17 +102,16 @@ router.post('/:id/upload-csv', upload.single('file'), async (req, res) => {
       .pipe(csv())
       .on('data', (data) => results.push(data))
       .on('end', async () => {
-        // Expected CSV headers: email, username
         for (const row of results) {
           const email = row.email ? row.email.trim().toLowerCase() : null;
           const username = row.username ? row.username.trim() : 'Student';
           
-          if (!email) continue; // skip invalid rows
+          if (!email) continue; 
 
           let user = await User.findOne({ email });
           if (!user) {
-            // Create new user
-            const hashedPassword = await bcrypt.hash('password123', 10);
+            const randomPassword = crypto.randomBytes(12).toString('hex');
+            const hashedPassword = await bcrypt.hash(randomPassword, 10);
             user = new User({
               email,
               password: hashedPassword,
@@ -110,12 +120,10 @@ router.post('/:id/upload-csv', upload.single('file'), async (req, res) => {
             });
           }
           
-          // Assign to class
           user.classId = classId;
           await user.save();
         }
         
-        // Remove temp file
         fs.unlinkSync(req.file.path);
         
         res.json({ message: 'Students uploaded and assigned successfully!' });
@@ -127,7 +135,7 @@ router.post('/:id/upload-csv', upload.single('file'), async (req, res) => {
 });
 
 // ADD student manually to class
-router.post('/:id/add-student-manual', async (req, res) => {
+router.post('/:id/add-student-manual', verifyToken, requireStaff, async (req, res) => {
   try {
     const classId = req.params.id;
     const { email, username } = req.body;
@@ -139,7 +147,8 @@ router.post('/:id/add-student-manual', async (req, res) => {
     
     let user = await User.findOne({ email: formattedEmail });
     if (!user) {
-      const hashedPassword = await bcrypt.hash('password123', 10);
+      const randomPassword = crypto.randomBytes(12).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
       user = new User({
         email: formattedEmail,
         password: hashedPassword,

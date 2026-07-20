@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Network, BrainCircuit, TrendingUp, Award, Mail, Lock, ArrowRight, UserPlus } from 'lucide-react';
+import toast from 'react-hot-toast';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
@@ -36,18 +37,21 @@ const Login = ({ onLogin }) => {
     e.preventDefault();
     
     if (!validateEmail(email)) {
-      return alert("Please enter a valid email address.");
+      toast.error("Please enter a valid email address.");
+      return;
     }
     
     if (isRegistering) {
       if (password !== confirmPassword) {
-        return alert("Passwords do not match");
+        toast.error("Passwords do not match");
+        return;
       }
       
       const expectedAnswer = captchaMath.num1 + captchaMath.num2;
       if (parseInt(captchaAnswer) !== expectedAnswer) {
         generateCaptcha();
-        return alert("Incorrect math captcha answer. Please try again.");
+        toast.error("Incorrect math captcha answer. Please try again.");
+        return;
       }
     }
 
@@ -65,7 +69,7 @@ const Login = ({ onLogin }) => {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             await sendEmailVerification(userCredential.user);
             firebaseToken = await userCredential.user.getIdToken();
-            alert("Verification email sent! Please check your inbox (and spam folder).");
+            toast.success("Verification email sent! Please check your inbox (and spam folder).", { duration: 5000 });
           } else {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             firebaseToken = await userCredential.user.getIdToken();
@@ -81,10 +85,11 @@ const Login = ({ onLogin }) => {
           headers['Authorization'] = `Bearer ${firebaseToken}`;
         }
 
-        const response = await fetch(`http://localhost:5001${endpoint}`, {
+        const response = await fetch(`${import.meta.env.VITE_BASE_URL}${endpoint}`, {
           method: 'POST',
           headers: headers,
-          body: JSON.stringify({ email: userEmail, password: password })
+          body: JSON.stringify({ email: userEmail, username: userObj?.displayName }),
+          credentials: 'include'
         });
         
         const data = await response.json();
@@ -92,9 +97,11 @@ const Login = ({ onLogin }) => {
         if (response.ok) {
           onLogin(data.user);
           // Also store the standard token if the backend returns one, or just rely on Firebase
-          if (data.token) localStorage.setItem('token', data.token);
+          if (data.token) {
+            // Token is now set securely via HttpOnly cookie by the backend
+          }
         } else {
-          alert(data.error || 'Authentication failed');
+          toast.error(data.error || 'Authentication failed');
           if (!isRegistering && data.error && data.error.includes('create an account')) {
             setIsRegistering(true);
           }
@@ -103,12 +110,34 @@ const Login = ({ onLogin }) => {
         console.error('Auth error:', err);
         // Firebase specific error messages
         if (err.code === 'auth/email-already-in-use') {
-          alert('This email is already registered. Please sign in instead.');
+          toast.error('This email is already registered. Please sign in instead.');
           setIsRegistering(false);
         } else {
-          alert('Authentication Error: ' + err.message);
+          toast.error('Authentication Error: ' + err.message);
         }
       } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error('Please enter your email address first.');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const { sendPasswordResetEmail } = await import("firebase/auth");
+      const { auth } = await import("../../firebase");
+      
+      await sendPasswordResetEmail(auth, email);
+      toast.success('Password reset email sent! Check your inbox.');
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || 'Failed to send password reset email.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -199,7 +228,7 @@ const Login = ({ onLogin }) => {
               <div className="login-input-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label htmlFor="password">Password</label>
-                  {!isRegistering && <a href="#" onClick={(e) => { e.preventDefault(); alert("Please contact support to reset your password."); }} className="login-forgot">Forgot password?</a>}
+                  {!isRegistering && <a href="#" onClick={handleForgotPassword} className="login-forgot">Forgot password?</a>}
                 </div>
                 <div className="login-input-wrapper">
                   <Lock size={16} className="login-input-icon" />

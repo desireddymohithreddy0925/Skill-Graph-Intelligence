@@ -3,17 +3,21 @@ const router = express.Router();
 const Subject = require('../models/Subject');
 const UserProgress = require('../models/UserProgress');
 const InterviewReport = require('../models/InterviewReport');
+const { verifyToken } = require('../middleware/auth');
 
 // Helper
-const getUserProgress = async () => {
-  let progress = await UserProgress.findOne({ userId: 'default_user' });
+const getUserProgress = async (userId) => {
+  let progress = await UserProgress.findOne({ userId });
+  if (!progress) {
+    progress = await UserProgress.create({ userId });
+  }
   return progress;
 };
 
 // @route   GET /api/viva/subjects
 // @desc    Get all subjects and chapters
-// @access  Public
-router.get('/subjects', async (req, res) => {
+// @access  Private
+router.get('/subjects', verifyToken, async (req, res) => {
   try {
     const subjects = await Subject.find();
     res.status(200).json({ message: 'Subjects retrieved perfectly', subjects });
@@ -22,10 +26,10 @@ router.get('/subjects', async (req, res) => {
 
 // @route   GET /api/viva/topics/status
 // @desc    Get status of completed topics
-// @access  Public
-router.get('/topics/status', async (req, res) => {
+// @access  Private
+router.get('/topics/status', verifyToken, async (req, res) => {
   try {
-    const progress = await getUserProgress();
+    const progress = await getUserProgress(req.user.id);
     res.status(200).json({
       message: 'Topic statuses retrieved perfectly',
       completedTopics: progress ? progress.completedTopics : {}
@@ -35,14 +39,13 @@ router.get('/topics/status', async (req, res) => {
 
 // @route   POST /api/viva/topics/complete
 // @desc    Mark a topic as completed
-// @access  Public
-router.post('/topics/complete', async (req, res) => {
+// @access  Private
+router.post('/topics/complete', verifyToken, async (req, res) => {
   try {
     const { topic } = req.body;
     if (!topic) return res.status(400).json({ error: 'Topic is required' });
     
-    const progress = await getUserProgress();
-    if (!progress) return res.status(404).json({ error: 'User progress not found' });
+    const progress = await getUserProgress(req.user.id);
     
     progress.completedTopics.set(topic, true);
     await progress.save();
@@ -56,8 +59,8 @@ router.post('/topics/complete', async (req, res) => {
 
 // @route   POST /api/viva/start
 // @desc    Initialize a viva interview
-// @access  Public
-router.post('/start', async (req, res) => {
+// @access  Private
+router.post('/start', verifyToken, async (req, res) => {
   const { subject, unit } = req.body;
   if (!subject || !unit) {
     return res.status(400).json({ error: 'Subject and unit are required' });
@@ -77,8 +80,8 @@ router.post('/start', async (req, res) => {
 
 // @route   POST /api/viva/evaluate
 // @desc    Evaluate a candidate's answer
-// @access  Public
-router.post('/evaluate', (req, res) => {
+// @access  Private
+router.post('/evaluate', verifyToken, (req, res) => {
   const { sessionId, answer } = req.body;
   
   // Mock LLM evaluation
@@ -91,8 +94,8 @@ router.post('/evaluate', (req, res) => {
 
 // @route   GET /api/viva/report/:sessionId
 // @desc    Get final interview report
-// @access  Public
-router.get('/report/:sessionId', async (req, res) => {
+// @access  Private
+router.get('/report/:sessionId', verifyToken, async (req, res) => {
   try {
     const report = await InterviewReport.findOne({ sessionId: req.params.sessionId });
     if (!report) return res.status(404).json({ error: 'Report not found' });

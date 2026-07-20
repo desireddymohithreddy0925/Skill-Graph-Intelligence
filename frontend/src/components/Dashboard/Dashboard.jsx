@@ -20,16 +20,16 @@ const Dashboard = ({ setActiveTab, user }) => {
 
   const fetchAssignments = async (userId) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/assignments/student/${userId}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assignments/student/${userId}`);
       const json = await res.json();
-      if (res.ok) setAssignments(json);
+      if (res.ok) setAssignments(json.data || json);
     } catch (err) { console.error(err); }
   };
 
   const fetchDashboardData = async () => {
     try {
       const userId = user?.id || user?._id;
-      const url = userId ? `/api/dashboard/full?userId=${userId}` : '/api/dashboard/full';
+      const url = userId ? `${import.meta.env.VITE_BASE_URL}/api/dashboard/full?userId=${userId}` : `${import.meta.env.VITE_BASE_URL}/api/dashboard/full`;
       const res = await fetch(url);
       const json = await res.json();
       if (res.ok) {
@@ -44,7 +44,7 @@ const Dashboard = ({ setActiveTab, user }) => {
 
   const handleRoadmapStart = async () => {
     try {
-      const res = await fetch('/api/dashboard/roadmap/start', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/dashboard/roadmap/start', {
         method: 'POST'
       });
       const json = await res.json();
@@ -61,7 +61,7 @@ const Dashboard = ({ setActiveTab, user }) => {
   };
 
   if (loading) {
-    return <Loading message="Loading Insights..." fullScreen={true} />;
+    return <Loading message="Loading Insights..." fullScreen={false} />;
   }
 
   if (!data) {
@@ -110,7 +110,7 @@ const Dashboard = ({ setActiveTab, user }) => {
                     {!a.isCompleted && (
                       <button className="btn btn-primary" onClick={async () => {
                         try {
-                          await fetch(`http://localhost:5001/api/assignments/${a._id}/complete`, { method: 'PUT' });
+                          await fetch(`${import.meta.env.VITE_BASE_URL}/api/assignments/${a._id}/complete`, { method: 'PUT' });
                           fetchAssignments();
                         } catch (err) { console.error(err); }
                       }}>Complete</button>

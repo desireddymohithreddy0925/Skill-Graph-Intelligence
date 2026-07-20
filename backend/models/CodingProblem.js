@@ -1,15 +1,15 @@
 const mongoose = require('mongoose');
 
 const codingProblemSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  url: { type: String, required: true },
+  title: { type: String, maxLength: 5000, required: true },
+  url: { type: String, maxLength: 5000, required: true },
   platform: { 
-    type: String, 
+    type: String, maxLength: 5000, 
     required: true,
     enum: ['LeetCode', 'CodeChef', 'Codeforces', 'HackerRank', 'AtCoder', 'Other'] 
   },
   difficulty: { 
-    type: String, 
+    type: String, maxLength: 5000, 
     enum: ['Easy', 'Medium', 'Hard'], 
     default: 'Medium' 
   },

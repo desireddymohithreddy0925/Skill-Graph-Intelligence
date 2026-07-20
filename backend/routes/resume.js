@@ -1,15 +1,20 @@
 const express = require('express');
 const router = express.Router();
+const { verifyToken } = require('../middleware/auth');
+const Joi = require('joi');
+const { validateBody } = require('../middleware/validate');
+
+const resumeAnalysisSchema = Joi.object({
+  pastFileName: Joi.string().max(200).required(),
+  presentFileName: Joi.string().max(200).required()
+});
 
 // @route   POST /api/resume/analyze
 // @desc    Mock endpoint to analyze resumes and give suggestions
-router.post('/analyze', async (req, res) => {
+router.post('/analyze', verifyToken, validateBody(resumeAnalysisSchema), async (req, res) => {
   try {
     const { pastFileName, presentFileName } = req.body;
 
-    // In a real app, this would process the uploaded files with AI/NLP
-    // Here we return mock smart suggestions based on the context
-    
     const analysis = {
       changes: [
         "Update the objective statement to be more targeted towards your dream company's requirements.",
@@ -25,7 +30,6 @@ router.post('/analyze', async (req, res) => {
       ]
     };
 
-    // Simulate delay for AI processing
     setTimeout(() => {
       res.status(200).json({ 
         message: 'Analysis complete',

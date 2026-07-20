@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, ExternalLink, Plus, Trash2 } from 'lucide-react';
-import './Dashboard.css'; // Reusing dashboard styles
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
+import './Dashboard.css';
 
 const ImportantLinks = ({ user }) => {
   const [links, setLinks] = useState([]);
@@ -9,25 +11,26 @@ const ImportantLinks = ({ user }) => {
   const [targetClasses, setTargetClasses] = useState([]);
   const [availableClasses, setAvailableClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [linkToDelete, setLinkToDelete] = useState(null);
 
   const isStaff = ['admin', 'sub admin', 'manager', 'mentor'].includes(user?.role);
 
-  useEffect(() => {
-    fetchLinks();
-    if (isStaff) fetchClasses();
-  }, []);
-
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
+        credentials: 'include'
+      });
       const data = await res.json();
       setAvailableClasses(data);
     } catch(err) { console.error(err); }
-  };
+  }, []);
 
-  const fetchLinks = async () => {
+  const fetchLinks = useCallback(async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/links${user?.id ? `?userId=${user.id}` : ''}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/links${user?._id ? `?userId=${user._id}` : ''}`, {
+        credentials: 'include'
+      });
       const data = await res.json();
       setLinks(data);
     } catch (err) {
@@ -35,15 +38,20 @@ const ImportantLinks = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?._id]);
+
+  useEffect(() => {
+    fetchLinks();
+    if (isStaff) fetchClasses();
+  }, [isStaff, fetchLinks, fetchClasses]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!title || !url) return alert('Title and URL are required');
+    if (!title || !url) { toast.error('Title and URL are required'); return; }
     try {
-      const res = await fetch('http://localhost:5001/api/links', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/links', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ title, url, targetClasses, createdBy: user._id })
       });
       if (res.ok) {
@@ -57,13 +65,26 @@ const ImportantLinks = ({ user }) => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this link?')) return;
+  const requestDelete = (id) => {
+    setLinkToDelete(id);
+    setConfirmModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!linkToDelete) return;
     try {
-      await fetch(`http://localhost:5001/api/links/${id}`, { method: 'DELETE' });
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/links/${linkToDelete}`, { 
+        method: 'DELETE',
+        credentials: 'include'
+      });
       fetchLinks();
+      toast.success('Link deleted successfully');
     } catch (err) {
       console.error(err);
+      toast.error('Failed to delete link');
+    } finally {
+      setConfirmModalOpen(false);
+      setLinkToDelete(null);
     }
   };
 
@@ -81,8 +102,9 @@ const ImportantLinks = ({ user }) => {
           <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Plus size={20} /> Add New Link</h3>
           <form onSubmit={handleCreate} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 200px' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Title</label>
+              <label htmlFor="link-title" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Title</label>
               <input
+                id="link-title"
                 type="text"
                 placeholder="Link Title (e.g., Leave Application Form)"
                 value={title}
@@ -91,12 +113,12 @@ const ImportantLinks = ({ user }) => {
               />
             </div>
             <div style={{ flex: '1 1 200px' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Link URL</label>
-              <input type="url" placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+              <label htmlFor="link-url" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Link URL</label>
+              <input id="link-url" type="url" placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
             </div>
             <div style={{ flex: '1 1 200px' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Target Classes</label>
-              <select multiple value={targetClasses} onChange={e => setTargetClasses(Array.from(e.target.selectedOptions, option => option.value))} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', height: '80px' }}>
+              <label htmlFor="link-target-classes" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Target Classes</label>
+              <select id="link-target-classes" multiple value={targetClasses} onChange={e => setTargetClasses(Array.from(e.target.selectedOptions, option => option.value))} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', height: '80px' }}>
                 {availableClasses.map(c => <option key={c._id} value={c._id}>{c.name} ({c.year})</option>)}
               </select>
             </div>
@@ -118,7 +140,7 @@ const ImportantLinks = ({ user }) => {
                   {link.title}
                 </h3>
                 {isStaff && (
-                  <button onClick={() => handleDelete(link._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }} title="Delete Link">
+                  <button onClick={() => requestDelete(link._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }} title="Delete Link">
                     <Trash2 size={16} />
                   </button>
                 )}
@@ -136,6 +158,20 @@ const ImportantLinks = ({ user }) => {
           ))}
         </div>
       )}
+      
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Delete Link?"
+        message="Are you sure you want to delete this link? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setLinkToDelete(null);
+        }}
+      />
     </div>
   );
 };

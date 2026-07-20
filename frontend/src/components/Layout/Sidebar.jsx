@@ -65,14 +65,23 @@ const Sidebar = ({ activeTab, setActiveTab, isMobileMenuOpen, setIsMobileMenuOpe
   };
 
   const renderNavList = (items) => (
-    <ul className="nav-list">
+    <ul className="nav-list" role="menu">
       {items.map((item) => (
         <li 
           key={item.id} 
           className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+          role="menuitem"
+          tabIndex={0}
           onClick={() => {
             setActiveTab(item.id);
             setIsMobileMenuOpen(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setActiveTab(item.id);
+              setIsMobileMenuOpen(false);
+            }
           }}
         >
           <item.icon className="nav-icon" size={20} />
@@ -145,18 +154,38 @@ const Sidebar = ({ activeTab, setActiveTab, isMobileMenuOpen, setIsMobileMenuOpe
           </div>
         )}
 
-        <ul className="nav-list">
+        <ul className="nav-list" role="menu">
           <li
             className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+            role="menuitem"
+            tabIndex={0}
             onClick={() => {
               setActiveTab('settings');
               setIsMobileMenuOpen(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setActiveTab('settings');
+                setIsMobileMenuOpen(false);
+              }
             }}
           >
             <Settings className="nav-icon" size={20} />
             <span>Settings</span>
           </li>
-          <li className="nav-item text-error" onClick={onLogout}>
+          <li 
+            className="nav-item text-error" 
+            role="menuitem"
+            tabIndex={0}
+            onClick={onLogout}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onLogout();
+              }
+            }}
+          >
             <LogOut className="nav-icon" size={20} />
             <span>Log out</span>
           </li>

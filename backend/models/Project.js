@@ -2,27 +2,27 @@ const mongoose = require('mongoose');
 
 const ProjectSchema = new mongoose.Schema({
   userEmail: {
-    type: String,
+    type: String, maxLength: 5000,
     required: true
   },
   projectName: {
-    type: String,
+    type: String, maxLength: 5000,
     required: true
   },
   studentName: {
-    type: String,
+    type: String, maxLength: 5000,
     required: false
   },
   rollNumber: {
-    type: String,
+    type: String, maxLength: 5000,
     required: false
   },
   githubLink: {
-    type: String,
+    type: String, maxLength: 5000,
     required: true
   },
   onedriveLink: {
-    type: String,
+    type: String, maxLength: 5000,
     required: true
   },
   createdAt: {

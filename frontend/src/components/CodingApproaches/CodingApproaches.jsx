@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, Plus, Trash2, Code2, Tag, Layers } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import '../Dashboard/Dashboard.css';
 
 const PLATFORMS = ['LeetCode', 'CodeChef', 'Codeforces', 'HackerRank', 'AtCoder', 'Other'];
@@ -17,6 +19,10 @@ const CodingApproaches = ({ user }) => {
   const [targetClasses, setTargetClasses] = useState([]);
   const [availableClasses, setAvailableClasses] = useState([]);
 
+  // Delete Confirm State
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [problemToDelete, setProblemToDelete] = useState(null);
+
   const isStaff = ['admin', 'sub admin', 'manager', 'mentor'].includes(user?.role);
 
   useEffect(() => {
@@ -26,7 +32,9 @@ const CodingApproaches = ({ user }) => {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
+        credentials: 'include'
+      });
       const data = await res.json();
       setAvailableClasses(data);
     } catch(err) { console.error(err); }
@@ -34,7 +42,9 @@ const CodingApproaches = ({ user }) => {
 
   const fetchProblems = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/coding-problems${user?.id ? `?userId=${user.id}` : ''}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/coding-problems${user?._id ? `?userId=${user._id}` : ''}`, {
+        credentials: 'include'
+      });
       const data = await res.json();
       if (Array.isArray(data)) {
         setProblems(data);
@@ -51,11 +61,11 @@ const CodingApproaches = ({ user }) => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!title || !url) return alert('Title and URL are required');
+    if (!title || !url) { toast.error('Title and URL are required'); return; }
     try {
-      const res = await fetch('http://localhost:5001/api/coding-problems', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/coding-problems', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ title, url, platform, difficulty, targetClasses, createdBy: user._id })
       });
       if (res.ok) {
@@ -65,20 +75,34 @@ const CodingApproaches = ({ user }) => {
         setDifficulty('Medium');
         setTargetClasses([]);
         fetchProblems();
+        toast.success('Problem created successfully');
       }
     } catch (err) {
       console.error(err);
-      alert('Error creating problem');
+      toast.error('Error creating problem');
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this problem?')) return;
+  const requestDelete = (id) => {
+    setProblemToDelete(id);
+    setConfirmModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!problemToDelete) return;
     try {
-      await fetch(`http://localhost:5001/api/coding-problems/${id}`, { method: 'DELETE' });
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/coding-problems/${problemToDelete}`, { 
+        method: 'DELETE',
+        credentials: 'include'
+      });
       fetchProblems();
+      toast.success('Problem deleted successfully');
     } catch (err) {
       console.error(err);
+      toast.error('Error deleting problem');
+    } finally {
+      setConfirmModalOpen(false);
+      setProblemToDelete(null);
     }
   };
 
@@ -163,7 +187,7 @@ const CodingApproaches = ({ user }) => {
                           {problem.title}
                         </h4>
                         {isStaff && (
-                          <button onClick={() => handleDelete(problem._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', padding: '0.2rem' }} title="Delete Problem">
+                          <button onClick={() => requestDelete(problem._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', padding: '0.2rem' }} title="Delete Problem">
                             <Trash2 size={16} />
                           </button>
                         )}
@@ -195,6 +219,20 @@ const CodingApproaches = ({ user }) => {
           ))}
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Delete Problem?"
+        message="Are you sure you want to delete this coding problem? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setProblemToDelete(null);
+        }}
+      />
     </div>
   );
 };
