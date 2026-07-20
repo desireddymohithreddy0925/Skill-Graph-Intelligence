@@ -25,7 +25,7 @@ const corsOptions = {
 const io = new Server(server, {
   cors: corsOptions
 });
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5005;
 
 // Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI)
