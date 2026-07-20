@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Save, ArrowLeft, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useUnsavedChanges } from '../../context/UnsavedChangesContext';
 import '../Dashboard/Dashboard.css';
 
 const CreateAssessment = ({ user, setActiveTab }) => {
@@ -11,6 +12,17 @@ const CreateAssessment = ({ user, setActiveTab }) => {
   const [targetClasses, setTargetClasses] = useState([]);
   const [availableClasses, setAvailableClasses] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  
+  const { setHasUnsavedChanges } = useUnsavedChanges();
+
+  useEffect(() => {
+    // If any field deviates from its initial empty state, mark as dirty
+    if (title || description || questions.length > 1 || questions[0].questionText !== '' || timeLimit > 0) {
+      setHasUnsavedChanges(true);
+    } else {
+      setHasUnsavedChanges(false);
+    }
+  }, [title, description, questions, timeLimit, setHasUnsavedChanges]);
   
   useEffect(() => {
     fetchClasses();
@@ -106,6 +118,7 @@ const CreateAssessment = ({ user, setActiveTab }) => {
       const data = await res.json();
       if (res.ok) {
         toast.success('Assessment created successfully!');
+        setHasUnsavedChanges(false); // Clear before navigating
         setActiveTab('assessments');
       } else {
         toast.error(data.error || 'Failed to create assessment');
