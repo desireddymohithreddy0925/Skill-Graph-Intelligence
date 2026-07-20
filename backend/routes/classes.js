@@ -10,7 +10,17 @@ const crypto = require('crypto');
 const { verifyToken } = require('../middleware/auth');
 const { requireStaff } = require('../middleware/roles');
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.mimetype === 'application/vnd.ms-excel') {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only CSVs are allowed.'), false);
+    }
+  }
+});
 
 // GET all classes
 router.get('/', verifyToken, requireStaff, async (req, res) => {
