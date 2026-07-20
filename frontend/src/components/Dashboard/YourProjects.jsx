@@ -18,7 +18,7 @@ const YourProjects = ({ user }) => {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      const url = new URL('http://localhost:5001/api/projects');
+      const url = new URL(import.meta.env.VITE_BASE_URL + '/api/projects');
       url.searchParams.append('email', user.email);
       url.searchParams.append('role', user.role);
       
@@ -50,7 +50,7 @@ const YourProjects = ({ user }) => {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('http://localhost:5001/api/projects', {
+      const response = await fetch(import.meta.env.VITE_BASE_URL + '/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -76,7 +76,7 @@ const YourProjects = ({ user }) => {
     if (!window.confirm('Are you sure you want to delete this project?')) return;
     
     try {
-      const response = await fetch(`http://localhost:5001/api/projects/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/api/projects/${id}`, {
         method: 'DELETE'
       });
       

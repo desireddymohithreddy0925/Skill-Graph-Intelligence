@@ -35,7 +35,7 @@ const ClassesManagement = ({ user }) => {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes');
       const data = await res.json();
       setClassesList(data);
     } catch (err) {
@@ -51,13 +51,13 @@ const ClassesManagement = ({ user }) => {
 
     try {
       if (editingId) {
-        await fetch(`http://localhost:5001/api/classes/${editingId}`, {
+        await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: className, year: classYear })
         });
       } else {
-        await fetch('http://localhost:5001/api/classes', {
+        await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: className, year: classYear })
@@ -73,7 +73,7 @@ const ClassesManagement = ({ user }) => {
   const handleDeleteClass = async (id) => {
     if (!window.confirm('Are you sure you want to delete this class? All students will be unassigned.')) return;
     try {
-      await fetch(`http://localhost:5001/api/classes/${id}`, { method: 'DELETE' });
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${id}`, { method: 'DELETE' });
       fetchClasses();
     } catch (err) { console.error(err); }
   };
@@ -85,14 +85,14 @@ const ClassesManagement = ({ user }) => {
     
     // Fetch mentors directory
     try {
-      const mRes = await fetch('http://localhost:5001/api/profile/all');
+      const mRes = await fetch(import.meta.env.VITE_BASE_URL + '/api/profile/all');
       const allUsers = await mRes.json();
       setMentorsDirectory(allUsers.filter(u => ['mentor', 'admin', 'sub admin', 'manager'].includes(u.role)));
     } catch (e) { console.error(e); }
     
     // Fetch students
     try {
-      const sRes = await fetch(`http://localhost:5001/api/classes/${cls._id}/students`);
+      const sRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${cls._id}/students`);
       const sData = await sRes.json();
       setStudents(sData);
     } catch (e) { console.error(e); }
@@ -109,14 +109,14 @@ const ClassesManagement = ({ user }) => {
     }
     
     try {
-      const res = await fetch(`http://localhost:5001/api/classes/${selectedClass._id}/mentors`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${selectedClass._id}/mentors`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mentorIds: newMentors })
       });
       const updatedClass = await res.json();
       // Update local state by repopulating mentors
-      const mRes = await fetch('http://localhost:5001/api/classes');
+      const mRes = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes');
       const allC = await mRes.json();
       const updatedFullClass = allC.find(c => c._id === updatedClass._id);
       setSelectedClass(updatedFullClass);
@@ -133,7 +133,7 @@ const ClassesManagement = ({ user }) => {
 
     try {
       alert('Uploading and parsing CSV... This might take a moment.');
-      const res = await fetch(`http://localhost:5001/api/classes/${selectedClass._id}/upload-csv`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${selectedClass._id}/upload-csv`, {
         method: 'POST',
         body: formData
       });
@@ -154,7 +154,7 @@ const ClassesManagement = ({ user }) => {
     e.preventDefault();
     if (!manualEmail) return alert('Email is required');
     try {
-      const res = await fetch(`http://localhost:5001/api/classes/${selectedClass._id}/add-student-manual`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${selectedClass._id}/add-student-manual`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: manualEmail, username: manualUsername })
@@ -182,15 +182,15 @@ const ClassesManagement = ({ user }) => {
     setStudentWorks([]);
     
     try {
-      const pRes = await fetch(`http://localhost:5001/api/dashboard/full?userId=${student._id}`);
+      const pRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/full?userId=${student._id}`);
       const pData = await pRes.json();
       setStudentProgress(pData.data?.stats);
       
-      const wRes = await fetch(`http://localhost:5001/api/assignments/student/${student._id}`);
+      const wRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assignments/student/${student._id}`);
       const wData = await wRes.json();
       setStudentWorks(wData);
 
-      const rRes = await fetch(`http://localhost:5001/api/dashboard/roadmap/${student._id}`);
+      const rRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/${student._id}`);
       if(rRes.ok) {
         const rData = await rRes.json();
         setStudentRoadmap(rData.skillRoadmap || []);
@@ -202,7 +202,7 @@ const ClassesManagement = ({ user }) => {
 
   const handleSaveRoadmap = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/dashboard/roadmap/${selectedStudent._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/${selectedStudent._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skillRoadmap: studentRoadmap })

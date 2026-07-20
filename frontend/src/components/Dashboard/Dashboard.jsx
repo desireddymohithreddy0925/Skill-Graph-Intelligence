@@ -20,7 +20,7 @@ const Dashboard = ({ setActiveTab, user }) => {
 
   const fetchAssignments = async (userId) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/assignments/student/${userId}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assignments/student/${userId}`);
       const json = await res.json();
       if (res.ok) setAssignments(json);
     } catch (err) { console.error(err); }
@@ -110,7 +110,7 @@ const Dashboard = ({ setActiveTab, user }) => {
                     {!a.isCompleted && (
                       <button className="btn btn-primary" onClick={async () => {
                         try {
-                          await fetch(`http://localhost:5001/api/assignments/${a._id}/complete`, { method: 'PUT' });
+                          await fetch(`${import.meta.env.VITE_BASE_URL}/api/assignments/${a._id}/complete`, { method: 'PUT' });
                           fetchAssignments();
                         } catch (err) { console.error(err); }
                       }}>Complete</button>

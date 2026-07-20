@@ -26,7 +26,7 @@ const CodingApproaches = ({ user }) => {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes');
       const data = await res.json();
       setAvailableClasses(data);
     } catch(err) { console.error(err); }
@@ -34,7 +34,7 @@ const CodingApproaches = ({ user }) => {
 
   const fetchProblems = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/coding-problems${user?.id ? `?userId=${user.id}` : ''}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/coding-problems${user?.id ? `?userId=${user.id}` : ''}`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setProblems(data);
@@ -53,7 +53,7 @@ const CodingApproaches = ({ user }) => {
     e.preventDefault();
     if (!title || !url) return alert('Title and URL are required');
     try {
-      const res = await fetch('http://localhost:5001/api/coding-problems', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/coding-problems', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ title, url, platform, difficulty, targetClasses, createdBy: user._id })
@@ -75,7 +75,7 @@ const CodingApproaches = ({ user }) => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this problem?')) return;
     try {
-      await fetch(`http://localhost:5001/api/coding-problems/${id}`, { method: 'DELETE' });
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/coding-problems/${id}`, { method: 'DELETE' });
       fetchProblems();
     } catch (err) {
       console.error(err);

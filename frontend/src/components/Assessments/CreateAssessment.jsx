@@ -17,7 +17,7 @@ const CreateAssessment = ({ user, setActiveTab }) => {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes');
       const data = await res.json();
       setAvailableClasses(data);
     } catch(err) { console.error(err); }
@@ -58,7 +58,7 @@ const CreateAssessment = ({ user, setActiveTab }) => {
     formData.append('file', file);
     
     try {
-      const res = await fetch('http://localhost:5001/api/assessments/upload-pdf', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/assessments/upload-pdf', {
         method: 'POST',
         body: formData
       });
@@ -91,7 +91,7 @@ const CreateAssessment = ({ user, setActiveTab }) => {
     }
 
     try {
-      const res = await fetch('http://localhost:5001/api/assessments', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/assessments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description, type, timeLimit, questions, targetClasses, createdBy: user._id || user.id })

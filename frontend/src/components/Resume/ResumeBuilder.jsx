@@ -25,7 +25,7 @@ const ResumeBuilder = ({ user }) => {
     
     try {
       // Create FormData if we were really uploading files, but we just mock for now
-      const res = await fetch('http://localhost:5001/api/resume/analyze', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/resume/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

@@ -81,7 +81,7 @@ const Login = ({ onLogin }) => {
           headers['Authorization'] = `Bearer ${firebaseToken}`;
         }
 
-        const response = await fetch(`http://localhost:5001${endpoint}`, {
+        const response = await fetch(`${import.meta.env.VITE_BASE_URL}${endpoint}`, {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({ email: userEmail, password: password })

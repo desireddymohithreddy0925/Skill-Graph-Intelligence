@@ -41,7 +41,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
 
   useEffect(() => {
     // Fetch initial data
-    fetch(`http://localhost:5001/api/skilltmeter/join/${joinCode}`)
+    fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/join/${joinCode}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
@@ -52,7 +52,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
           setQaList(data.qa || []);
           
           // Connect socket
-          const newSocket = io('http://localhost:5001');
+          const newSocket = io(import.meta.env.VITE_BASE_URL + '');
           setSocket(newSocket);
           newSocket.emit('joinPresentation', joinCode);
 
@@ -95,7 +95,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
   const submitResponse = async (type, payload) => {
     try {
       const body = { type, slideIndex: presentation.currentSlideIndex, payload, userId: user?._id };
-      await fetch(`http://localhost:5001/api/skilltmeter/presentations/${joinCode}/submit`, {
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${joinCode}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -114,7 +114,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
 
   const submitQa = async () => {
     if (!qaText.trim()) return;
-    await fetch(`http://localhost:5001/api/skilltmeter/presentations/${joinCode}/qa`, {
+    await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${joinCode}/qa`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ questionText: qaText, slideIndex: presentation.currentSlideIndex, userId: user?._id })
@@ -123,7 +123,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
   };
 
   const upvoteQa = async (qaId) => {
-    await fetch(`http://localhost:5001/api/skilltmeter/presentations/${joinCode}/qa/${qaId}/upvote`, {
+    await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${joinCode}/qa/${qaId}/upvote`, {
       method: 'PUT'
     });
   };
