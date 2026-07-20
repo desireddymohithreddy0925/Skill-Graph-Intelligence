@@ -9,6 +9,11 @@ const mongoose = require('mongoose');
 // Load environment variables
 dotenv.config();
 
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL ERROR: JWT_SECRET is not defined in the environment variables.");
+  process.exit(1);
+}
+
 const app = express();
 const server = http.createServer(app);
 const corsOptions = {
@@ -75,7 +80,7 @@ io.use((socket, next) => {
     return next(new Error('Authentication error: Token missing'));
   }
   
-  const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-dev';
+  const JWT_SECRET = process.env.JWT_SECRET;
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) return next(new Error('Authentication error: Invalid token'));
     socket.user = decoded.user || decoded; // Support both standard and Firebase payloads

@@ -10,7 +10,7 @@ const { defaultDashboardData, defaultUserProgress } = require('../utils/defaultD
 
 const admin = require('../firebaseAdmin');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-dev';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Strict email validation regex
 const validateEmail = (email) => {
