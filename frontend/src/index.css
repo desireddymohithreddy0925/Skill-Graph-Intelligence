@@ -31,7 +31,7 @@
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #00E676 0%, #10b981 100%);
-  --gradient-background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+  --gradient-background: linear-gradient(135deg, #121212 0%, #0a1f13 50%, #1a1a1a 100%);
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -57,11 +57,19 @@
 body {
   font-family: var(--font-sans);
   background: var(--gradient-background);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
   background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.5;
   transition: background 0.5s ease, color 0.5s ease;
   -webkit-font-smoothing: antialiased;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 h1,
@@ -83,10 +91,10 @@ h6 {
 /* Utilities */
 .glass-panel {
   background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), var(--shadow-md);
   border-radius: 1rem;
 }
 
@@ -110,8 +118,8 @@ h6 {
 
 .card:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: var(--shadow-md);
-  border-color: var(--accent-tertiary);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 230, 118, 0.15);
+  border-color: rgba(0, 230, 118, 0.4);
 }
 
 .btn {
@@ -165,6 +173,12 @@ h6 {
 .animate-fade-in {
   animation: fadeIn 0.4s ease forwards;
 }
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
 
 @keyframes pulse {
 
