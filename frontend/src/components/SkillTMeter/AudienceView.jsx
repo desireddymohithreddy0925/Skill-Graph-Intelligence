@@ -63,7 +63,9 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
           setQaList(data.qa || []);
           
           // Connect socket
-          const newSocket = io(import.meta.env.VITE_BASE_URL || '');
+          const newSocket = io(import.meta.env.VITE_BASE_URL || '', {
+            auth: { token: localStorage.getItem('token') }
+          });
           setSocket(newSocket);
           
           newSocket.on('connect', () => {
