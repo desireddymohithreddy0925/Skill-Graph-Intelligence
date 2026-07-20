@@ -7,44 +7,61 @@ const DreamCompany = require('../models/DreamCompany');
 const AssessmentSubmission = require('../models/AssessmentSubmission');
 const Assignment = require('../models/Assignment');
 const { evaluateCurrentStreak, updateStreak } = require('../utils/streakManager');
+const { verifyToken } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/roles');
 
-// Helper to get the single mock dashboard data
-const getDashboardData = async () => {
-  let data = await DashboardData.findOne();
+// Helper to get the single mock dashboard data or create one for the user
+const getDashboardData = async (userId) => {
+  let data = await DashboardData.findOne({ userId });
+  if (!data) {
+    // If not found, clone the default template if it exists
+    const template = await DashboardData.findOne({ userId: 'default_user' });
+    if (template) {
+      const { _id, ...templateData } = template.toObject();
+      data = await DashboardData.create({ ...templateData, userId });
+    } else {
+      // Fallback if no template exists
+      data = await DashboardData.findOne(); // just get any for legacy support
+    }
+  }
   return data;
 };
 
 // @route   GET /api/dashboard/full
 // @desc    Get complete dynamic dashboard data
-router.get('/full', async (req, res) => {
+router.get('/full', verifyToken, async (req, res) => {
   try {
-    const userId = req.query.userId || 'default_user';
+    let targetUserId = req.user.id;
+    if (req.query.userId && req.query.userId !== req.user.id) {
+       const requester = await User.findById(req.user.id);
+       if (requester && ['admin', 'sub admin', 'manager', 'mentor'].includes(requester.role)) {
+          targetUserId = req.query.userId;
+       } else {
+          return res.status(403).json({ error: 'Forbidden: Cannot view other users dashboard' });
+       }
+    }
+    const userId = targetUserId;
     let user = null;
     let progress = null;
     let submissions = [];
     let assignments = [];
     
     // Fallback static data
-    const mockData = await getDashboardData();
+    const mockData = await getDashboardData(userId);
     if (!mockData) return res.status(404).json({ error: 'Dashboard data not found' });
     const data = mockData.toObject();
 
-    if (userId !== 'default_user') {
+    user = await User.findById(userId);
+    if (user) {
+      await updateStreak(userId);
       user = await User.findById(userId);
-      if (user) {
-        await updateStreak(userId);
-        user = await User.findById(userId);
-      }
-      progress = await UserProgress.findOne({ userId });
-      submissions = await AssessmentSubmission.find({ studentId: userId });
-      assignments = await Assignment.find({ studentId: userId });
-    } else {
-      progress = await UserProgress.findOne({ userId: 'default_user' });
     }
-
+    progress = await UserProgress.findOne({ userId });
     if (!progress) {
-      progress = { currentSkills: [], skillRoadmap: [], dreamCompany: 'Google' };
+       progress = await UserProgress.create({ userId, currentSkills: [], skillRoadmap: [], dreamCompany: 'Google' });
     }
+    submissions = await AssessmentSubmission.find({ studentId: userId });
+    assignments = await Assignment.find({ studentId: userId });
 
     // 1. Competency Graph Dynamic Update
     let avgScore = 0;
@@ -111,10 +128,10 @@ router.get('/full', async (req, res) => {
 
 // @route   POST /api/dashboard/mission/complete
 // @desc    Toggle a mission item in Today's Mission and award XP if all are complete
-router.post('/mission/complete', async (req, res) => {
+router.post('/mission/complete', verifyToken, async (req, res) => {
   try {
     const { id } = req.body;
-    const data = await getDashboardData();
+    const data = await getDashboardData(req.user.id);
     if (!data) return res.status(404).json({ error: 'Dashboard data not found' });
     
     let mission = data.todaysMission.find(m => m.id === id);
@@ -127,9 +144,6 @@ router.post('/mission/complete', async (req, res) => {
     const allCompleted = data.todaysMission.every(m => m.completed);
     let xpAwarded = 0;
     
-    // Only award XP once when transitioning from not-all to all
-    // Since this is mock data, we just check current state.
-    // Let's add 50 XP if all are true. We won't remove XP if unchecked to keep it simple.
     if (allCompleted && mission.completed) {
        data.stats.xp += 50;
        xpAwarded = 50;
@@ -148,7 +162,7 @@ router.post('/mission/complete', async (req, res) => {
 
 // @route   GET /api/dashboard/roadmap/:studentId
 // @desc    Get student's roadmap
-router.get('/roadmap/:studentId', async (req, res) => {
+router.get('/roadmap/:studentId', verifyToken, async (req, res) => {
   try {
     let progress = await UserProgress.findOne({ userId: req.params.studentId });
     if (!progress) return res.status(200).json({ skillRoadmap: [] });
@@ -158,7 +172,7 @@ router.get('/roadmap/:studentId', async (req, res) => {
 
 // @route   PUT /api/dashboard/roadmap/:studentId
 // @desc    Update student's roadmap (for mentors)
-router.put('/roadmap/:studentId', async (req, res) => {
+router.put('/roadmap/:studentId', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { skillRoadmap } = req.body;
     let progress = await UserProgress.findOne({ userId: req.params.studentId });
@@ -174,7 +188,7 @@ router.put('/roadmap/:studentId', async (req, res) => {
 
 // @route   PUT /api/dashboard/roadmap/class/:classId
 // @desc    Update roadmap for an entire class
-router.put('/roadmap/class/:classId', async (req, res) => {
+router.put('/roadmap/class/:classId', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { skillRoadmap } = req.body;
     const students = await User.find({ classId: req.params.classId, role: 'student' });
@@ -193,28 +207,23 @@ router.put('/roadmap/class/:classId', async (req, res) => {
 });
 
 // @route   POST /api/dashboard/roadmap/start
-// @desc    Mark the current AI Skill gap module as 'in-progress' or 'completed'
-router.post('/roadmap/start', async (req, res) => {
-  // Legacy mock logic - removed or simulated
+router.post('/roadmap/start', verifyToken, async (req, res) => {
   res.status(200).json({ message: 'Module started successfully' });
 });
 
-// Old endpoints kept for backwards compatibility if needed
-router.get('/overview', async (req, res) => {
+router.get('/overview', verifyToken, async (req, res) => {
   try {
-    const data = await getDashboardData();
+    const data = await getDashboardData(req.user.id);
     res.status(200).json({ message: 'Dashboard data retrieved perfectly', data: data ? data.overview : {} });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // @route   GET /api/dashboard/dream-companies
-// @route   GET /api/dashboard/dream-companies
-// @desc    Get dynamic readiness data and AI match analysis for dream companies
-router.get('/dream-companies', async (req, res) => {
+router.get('/dream-companies', verifyToken, async (req, res) => {
   try {
-    let progress = await UserProgress.findOne({ userId: 'default_user' });
+    let progress = await UserProgress.findOne({ userId: req.user.id });
     if (!progress) {
-      progress = await UserProgress.create({ userId: 'default_user' });
+      progress = await UserProgress.create({ userId: req.user.id });
     }
     const studentSkills = progress.currentSkills || [];
     const activeCompany = progress.dreamCompany || 'Google';
@@ -222,7 +231,6 @@ router.get('/dream-companies', async (req, res) => {
     // Fetch all companies from DB
     let companiesList = await DreamCompany.find();
     
-    // Auto-seed if empty for demo purposes
     if (companiesList.length === 0) {
       const seedCompanies = [
         { name: 'Google', requiredSkills: ['Data Structures', 'Algorithms', 'System Design', 'Go', 'Python'] },
@@ -245,10 +253,9 @@ router.get('/dream-companies', async (req, res) => {
       if (reqSkills.length > 0) {
         readiness = Math.round((hasCount / reqSkills.length) * 100);
       } else {
-        readiness = 100; // If no skills required, 100%
+        readiness = 100;
       }
 
-      // Generate "AI" Insights
       let aiAnalysis = {
         laggingAreas: missing.length > 0 ? `You are currently lacking in ${missing.join(', ')}. Focus on building small projects or taking targeted assessments in these areas.` : `Great job! You possess all the core technical skills listed for ${company.name}.`,
         unknownFactors: "Behavioral traits, culture fit, and soft skills are currently unmeasured."
@@ -262,48 +269,33 @@ router.get('/dream-companies', async (req, res) => {
       };
     });
 
-    res.status(200).json({ 
-      companies: companiesData, 
-      activeCompany,
-      studentSkills
-    });
-  } catch (err) { 
-    res.status(500).json({ error: err.message }); 
-  }
+    res.status(200).json({ companies: companiesData, activeCompany, studentSkills });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // @route   POST /api/dashboard/student-skills
-// @desc    Update the student's current skills
-router.post('/student-skills', async (req, res) => {
+router.post('/student-skills', verifyToken, async (req, res) => {
   try {
     const { skills } = req.body;
-    let progress = await UserProgress.findOne({ userId: 'default_user' });
+    let progress = await UserProgress.findOne({ userId: req.user.id });
     if (!progress) {
-      progress = await UserProgress.create({ userId: 'default_user', currentSkills: skills });
+      progress = await UserProgress.create({ userId: req.user.id, currentSkills: skills });
     } else {
       progress.currentSkills = skills;
       await progress.save();
     }
     res.status(200).json({ message: 'Skills updated', currentSkills: progress.currentSkills });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// @route   GET /api/dashboard/dream-companies-admin
-// @desc    Get all dream companies for admin management
-router.get('/dream-companies-admin', async (req, res) => {
+router.get('/dream-companies-admin', verifyToken, requireAdmin, async (req, res) => {
   try {
     const companies = await DreamCompany.find().sort({ name: 1 });
     res.status(200).json(companies);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// @route   POST /api/dashboard/dream-companies-admin
-// @desc    Create or update a dream company
-router.post('/dream-companies-admin', async (req, res) => {
+router.post('/dream-companies-admin', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { name, requiredSkills } = req.body;
     let company = await DreamCompany.findOne({ name });
@@ -314,42 +306,30 @@ router.post('/dream-companies-admin', async (req, res) => {
       company = await DreamCompany.create({ name, requiredSkills });
     }
     res.status(200).json(company);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// @route   DELETE /api/dashboard/dream-companies-admin/:id
-// @desc    Delete a dream company
-router.delete('/dream-companies-admin/:id', async (req, res) => {
+router.delete('/dream-companies-admin/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     await DreamCompany.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: 'Company deleted' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// @route   GET /api/dashboard/career-gps
-// @desc    Get the user's career GPS tasks
-router.get('/career-gps', async (req, res) => {
+router.get('/career-gps', verifyToken, async (req, res) => {
   try {
-    let progress = await UserProgress.findOne({ userId: 'default_user' });
+    let progress = await UserProgress.findOne({ userId: req.user.id });
     if (!progress) {
-      progress = await UserProgress.create({ userId: 'default_user' });
+      progress = await UserProgress.create({ userId: req.user.id });
     }
     res.status(200).json({ tasks: progress.gpsTasks, dreamCompany: progress.dreamCompany });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// @route   POST /api/dashboard/career-gps/toggle
-// @desc    Toggle a specific GPS task
-router.post('/career-gps/toggle', async (req, res) => {
+router.post('/career-gps/toggle', verifyToken, async (req, res) => {
   try {
     const { key } = req.body;
-    let progress = await UserProgress.findOne({ userId: 'default_user' });
+    let progress = await UserProgress.findOne({ userId: req.user.id });
     if (!progress) return res.status(404).json({ error: 'User progress not found' });
 
     if (progress.gpsTasks && typeof progress.gpsTasks[key] !== 'undefined') {
@@ -358,27 +338,21 @@ router.post('/career-gps/toggle', async (req, res) => {
     }
     
     res.status(200).json({ message: 'Task toggled', tasks: progress.gpsTasks });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// @route   POST /api/dashboard/dream-company
-// @desc    Update the user's dream company
-router.post('/dream-company', async (req, res) => {
+router.post('/dream-company', verifyToken, async (req, res) => {
   try {
     const { company } = req.body;
-    let progress = await UserProgress.findOne({ userId: 'default_user' });
+    let progress = await UserProgress.findOne({ userId: req.user.id });
     if (!progress) {
-      progress = await UserProgress.create({ userId: 'default_user', dreamCompany: company });
+      progress = await UserProgress.create({ userId: req.user.id, dreamCompany: company });
     } else {
       progress.dreamCompany = company;
       await progress.save();
     }
     res.status(200).json({ message: 'Dream company updated', company: progress.dreamCompany });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = router;
