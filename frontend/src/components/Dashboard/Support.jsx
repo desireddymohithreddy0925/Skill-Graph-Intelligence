@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LifeBuoy, CheckCircle, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import './Dashboard.css';
 
 const Support = ({ user }) => {
@@ -10,6 +12,10 @@ const Support = ({ user }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Staff action state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [issueToResolve, setIssueToResolve] = useState(null);
 
   useEffect(() => {
     fetchComplaints();
@@ -39,7 +45,7 @@ const Support = ({ user }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !description) return alert('Title and description are required');
+    if (!title || !description) { toast.error('Title and description are required'); return; }
 
     setSubmitting(true);
     try {
@@ -52,7 +58,7 @@ const Support = ({ user }) => {
         setTitle('');
         setDescription('');
         fetchComplaints();
-        alert('Complaint submitted successfully');
+        toast.success('Complaint submitted successfully');
       }
     } catch (err) {
       console.error(err);
@@ -61,17 +67,27 @@ const Support = ({ user }) => {
     }
   };
 
-  const handleResolve = async (id) => {
-    if (!window.confirm('Mark this issue as resolved?')) return;
+  const requestResolve = (id) => {
+    setIssueToResolve(id);
+    setConfirmModalOpen(true);
+  };
+
+  const handleResolve = async () => {
+    if (!issueToResolve) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/complaints/${id}/resolve`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/complaints/${issueToResolve}/resolve`, {
         method: 'PUT'
       });
       if (res.ok) {
         fetchComplaints();
+        toast.success('Issue marked as resolved');
       }
     } catch (err) {
       console.error(err);
+      toast.error('Failed to resolve issue');
+    } finally {
+      setConfirmModalOpen(false);
+      setIssueToResolve(null);
     }
   };
 
@@ -106,13 +122,26 @@ const Support = ({ user }) => {
                     <strong>Class:</strong> {c.classId ? `${c.classId.name} (${c.classId.year})` : 'Unassigned'}
                   </div>
                   {c.status === 'open' && (
-                    <button className="btn btn-primary" onClick={() => handleResolve(c._id)}>Mark as Resolved</button>
+                    <button className="btn btn-primary" onClick={() => requestResolve(c._id)}>Mark as Resolved</button>
                   )}
                 </div>
               </div>
             ))}
           </div>
         )}
+        
+        <ConfirmModal 
+          isOpen={confirmModalOpen}
+          title="Resolve Issue?"
+          message="Are you sure you want to mark this issue as resolved?"
+          confirmText="Yes, Resolve"
+          cancelText="Cancel"
+          onConfirm={handleResolve}
+          onCancel={() => {
+            setConfirmModalOpen(false);
+            setIssueToResolve(null);
+          }}
+        />
       </div>
     );
   }

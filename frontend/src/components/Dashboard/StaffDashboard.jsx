@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, User, Briefcase, BarChart2, Building } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import Profile from './Profile';
 import { DashboardAPI } from '../../api/client';
 import './Dashboard.css'; // Reuse Dashboard styles where possible
@@ -29,6 +31,10 @@ const StaffDashboard = ({ user }) => {
   const [studentRoadmap, setStudentRoadmap] = useState([]);
   const [newRoadmapNode, setNewRoadmapNode] = useState({ title: '', status: 'locked', color: 'var(--text-tertiary)' });
   
+  // Demote user state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [userToDemote, setUserToDemote] = useState(null);
+
   useEffect(() => {
     fetchUsers();
     if (['admin', 'sub admin', 'manager'].includes(user?.role)) {
@@ -122,8 +128,8 @@ const StaffDashboard = ({ user }) => {
                     setIsAssigning(false);
                     setTaskTitle('');
                     setTaskDesc('');
-                    alert('Task assigned successfully!');
-                  } catch (err) { console.error(err); }
+                    toast.success('Task assigned successfully!');
+                  } catch (err) { console.error(err); toast.error('Failed to assign task'); }
                 }}>Assign Task</button>
               </div>
             </div>
@@ -150,8 +156,8 @@ const StaffDashboard = ({ user }) => {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ skillRoadmap: studentRoadmap })
                 });
-                if(res.ok) alert('Roadmap updated successfully');
-              } catch(err) { console.error(err); alert('Failed to update'); }
+                if(res.ok) toast.success('Roadmap updated successfully');
+              } catch(err) { console.error(err); toast.error('Failed to update roadmap'); }
             }}>Save Changes</button>
           </div>
           
@@ -275,21 +281,9 @@ const StaffDashboard = ({ user }) => {
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       {['admin', 'sub admin', 'manager'].includes(user?.role) && u.role !== 'student' && u.email !== user?.email && (
                         <button 
-                          onClick={async () => {
-                            if (window.confirm(`Are you sure you want to demote ${u.personalInfo?.username || u.email} to student?`)) {
-                              try {
-                                const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/roles/assign', {
-                                  method: 'PUT',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ email: u.email, roleName: 'student' })
-                                });
-                                if (res.ok) {
-                                  fetchUsers();
-                                } else {
-                                  alert('Failed to demote user');
-                                }
-                              } catch (err) { console.error(err); }
-                            }
+                          onClick={() => {
+                            setUserToDemote(u);
+                            setConfirmModalOpen(true);
                           }}
                           style={{ flex: 1, minWidth: '80px', background: 'transparent', border: '1px solid var(--error)', color: 'var(--error)', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.8rem', textAlign: 'center' }}
                           title="Demote to Student"
@@ -342,10 +336,11 @@ const StaffDashboard = ({ user }) => {
                 if (res.ok) {
                   setNewRoleName('');
                   fetchRoles();
+                  toast.success('Role created successfully');
                 } else {
-                  alert('Error creating role. Maybe it already exists.');
+                  toast.error('Error creating role. Maybe it already exists.');
                 }
-              } catch (err) { console.error(err); }
+              } catch (err) { console.error(err); toast.error('Error creating role'); }
             }}>Create Role</button>
           </div>
 
@@ -394,13 +389,13 @@ const StaffDashboard = ({ user }) => {
                 });
                 const data = await res.json();
                 if (res.ok) {
-                  alert(data.message);
+                  toast.success(data.message || 'Role assigned successfully');
                   setAssignEmail('');
                   fetchUsers(); // Refresh the list
                 } else {
-                  alert(data.error || 'Error assigning role');
+                  toast.error(data.error || 'Error assigning role');
                 }
-              } catch (err) { console.error(err); }
+              } catch (err) { console.error(err); toast.error('Error assigning role'); }
             }}>Assign Role</button>
           </div>
         </div>
@@ -436,7 +431,8 @@ const StaffDashboard = ({ user }) => {
                 setNewCompanyName('');
                 setNewCompanySkills('');
                 fetchCompaniesAdmin();
-              } catch (err) { console.error(err); alert('Error saving company'); }
+                toast.success('Company saved successfully');
+              } catch (err) { console.error(err); toast.error('Error saving company'); }
             }}>Save Company</button>
           </div>
 
@@ -464,6 +460,41 @@ const StaffDashboard = ({ user }) => {
           </div>
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Demote User?"
+        message={`Are you sure you want to demote ${userToDemote?.personalInfo?.username || userToDemote?.email} to student?`}
+        confirmText="Yes, Demote"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={async () => {
+          if (!userToDemote) return;
+          try {
+            const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/roles/assign', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: userToDemote.email, roleName: 'student' })
+            });
+            if (res.ok) {
+              fetchUsers();
+              toast.success(`Demoted ${userToDemote.personalInfo?.username || userToDemote.email} to student`);
+            } else {
+              toast.error('Failed to demote user');
+            }
+          } catch (err) { 
+            console.error(err); 
+            toast.error('Failed to demote user');
+          } finally {
+            setConfirmModalOpen(false);
+            setUserToDemote(null);
+          }
+        }}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setUserToDemote(null);
+        }}
+      />
     </div>
   );
 };

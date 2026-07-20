@@ -142,6 +142,7 @@ const mockSubjects = [
 ];
 
 const mockDashboardData = {
+  userId: 'default_user',
   stats: {
     xp: 1240,
     streak: 12

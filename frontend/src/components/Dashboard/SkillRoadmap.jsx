@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import Loading from '../ui/Loading';
 import { CheckCircle, PlayCircle, Lock, ChevronDown, Code2, FileText, CheckSquare } from 'lucide-react';
 
@@ -105,7 +106,7 @@ const SkillRoadmap = ({ data: initialData }) => {
             </div>
           </div>
 
-          <button className="btn btn-primary" onClick={() => alert('Continuing learning for this topic coming soon!')} style={{ marginTop: 'auto' }}>
+          <button className="btn btn-primary" onClick={() => toast('Continuing learning for this topic coming soon!', { icon: '🚧' })} style={{ marginTop: 'auto' }}>
             Continue Learning
           </button>
         </div>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Loading from '../ui/Loading';
+import ConfirmModal from '../ui/ConfirmModal';
+import toast from 'react-hot-toast';
 import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import '../Dashboard/Dashboard.css';
 
@@ -9,6 +11,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   
   // Anti-cheat & Timer state
   const [_vId, _setVId] = useState(0);
@@ -58,12 +61,12 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
 
         if (currentSwitches === 1) {
           setWarningMsg('WARNING: You have switched tabs. Switching tabs is not allowed during the assessment. If you switch tabs 3 times, your assessment will be automatically submitted.');
-          alert('WARNING: You have switched tabs. Switching tabs is not allowed during the assessment.');
+          toast.error('WARNING: You have switched tabs. Switching tabs is not allowed during the assessment.');
         } else if (currentSwitches === 2) {
           setWarningMsg('FINAL WARNING: You have switched tabs 2 times! One more time and your assessment will be auto-submitted!');
-          alert('FINAL WARNING: You have switched tabs 2 times! One more time and your assessment will be auto-submitted!');
+          toast.error('FINAL WARNING: You have switched tabs 2 times! One more time and your assessment will be auto-submitted!');
         } else if (currentSwitches >= 3) {
-          alert('You have switched tabs 3 times. Your assessment is being automatically submitted.');
+          toast.error('You have switched tabs 3 times. Your assessment is being automatically submitted.');
           submitAssessment(true);
         }
       }
@@ -77,7 +80,9 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
 
   const fetchAssessment = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       const data = await res.json();
       
       if (data._at) {
@@ -114,7 +119,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
     if (submitted || timeLeft === null) return;
 
     if (timeLeft <= 0) {
-      alert('Time is up! Your assessment is being automatically submitted.');
+      toast.error('Time is up! Your assessment is being automatically submitted.');
       submitAssessment(true);
       return;
     }
@@ -135,14 +140,24 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
   const submitAssessment = async (isAutoSubmit = false) => {
     if (submitted) return;
     
-    if (!isAutoSubmit && !window.confirm('Are you sure you want to submit your assessment?')) {
+    if (!isAutoSubmit) {
+      setConfirmModalOpen(true);
       return;
     }
+    
+    await executeSubmission(isAutoSubmit);
+  };
+
+  const executeSubmission = async (isAutoSubmit = false) => {
+    setConfirmModalOpen(false);
 
     try {
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify({
           studentId: user._id,
           answers,
@@ -164,7 +179,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
       }
     } catch (err) {
       console.error(err);
-      alert('Error submitting assessment');
+      toast.error('Error submitting assessment');
     }
   };
 
@@ -325,6 +340,16 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
           Submit Assessment
         </button>
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Submit Assessment?"
+        message="Are you sure you are ready to submit your assessment? You cannot undo this action."
+        confirmText="Yes, Submit"
+        cancelText="Cancel"
+        onConfirm={() => executeSubmission(false)}
+        onCancel={() => setConfirmModalOpen(false)}
+      />
     </div>
   );
 };

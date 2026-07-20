@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Save, ArrowLeft, Upload } from 'lucide-react';
+import toast from 'react-hot-toast';
 import '../Dashboard/Dashboard.css';
 
 const CreateAssessment = ({ user, setActiveTab }) => {
@@ -17,7 +18,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       const data = await res.json();
       setAvailableClasses(data);
     } catch(err) { console.error(err); }
@@ -60,22 +63,23 @@ const CreateAssessment = ({ user, setActiveTab }) => {
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/assessments/upload-pdf', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: formData
       });
       const data = await res.json();
       if (res.ok) {
         if (data.questions && data.questions.length > 0) {
           setQuestions(data.questions);
-          alert(`Successfully parsed ${data.questions.length} questions from PDF!`);
+          toast.success(`Successfully parsed ${data.questions.length} questions from PDF!`);
         } else {
-          alert('Could not find any questions in the expected format in this PDF.');
+          toast.error('Could not find any questions in the expected format in this PDF.');
         }
       } else {
-        alert(data.error || 'Failed to parse PDF');
+        toast.error(data.error || 'Failed to parse PDF');
       }
     } catch (err) {
       console.error(err);
-      alert('Error uploading PDF');
+      toast.error('Error uploading PDF');
     } finally {
       setIsUploading(false);
       e.target.value = ''; // Reset input
@@ -83,29 +87,32 @@ const CreateAssessment = ({ user, setActiveTab }) => {
   };
 
   const handleSave = async () => {
-    if (!title) return alert('Title is required');
+    if (!title) { toast.error('Title is required'); return; }
     // Basic validation
     for (let i = 0; i < questions.length; i++) {
-      if (!questions[i].questionText) return alert(`Question ${i+1} text is required`);
-      if (type === 'mcq' && !questions[i].correctAnswer) return alert(`Question ${i+1} correct answer is required`);
+      if (!questions[i].questionText) { toast.error(`Question ${i+1} text is required`); return; }
+      if (type === 'mcq' && !questions[i].correctAnswer) { toast.error(`Question ${i+1} correct answer is required`); return; }
     }
 
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/assessments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify({ title, description, type, timeLimit, questions, targetClasses, createdBy: user._id || user.id })
       });
       const data = await res.json();
       if (res.ok) {
-        alert('Assessment created successfully!');
+        toast.success('Assessment created successfully!');
         setActiveTab('assessments');
       } else {
-        alert(data.error || 'Failed to create assessment');
+        toast.error(data.error || 'Failed to create assessment');
       }
     } catch (err) {
       console.error(err);
-      alert('Error creating assessment');
+      toast.error('Error creating assessment');
     }
   };
 

@@ -22,7 +22,9 @@ const AssessmentResults = ({ assessmentId, setActiveTab }) => {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes');
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       const data = await res.json();
       setClasses(data);
     } catch(err) { console.error(err); }
@@ -30,7 +32,9 @@ const AssessmentResults = ({ assessmentId, setActiveTab }) => {
 
   const fetchAssessmentDetails = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       const data = await res.json();
       setAssessmentDetails(data);
     } catch(err) { console.error(err); }
@@ -43,7 +47,9 @@ const AssessmentResults = ({ assessmentId, setActiveTab }) => {
       if (selectedClassId) {
         url += `?classId=${selectedClassId}`;
       }
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       const data = await res.json();
       setResults(data);
     } catch(err) {

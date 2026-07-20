@@ -28,6 +28,7 @@ import CodingApproaches from './components/CodingApproaches/CodingApproaches';
 import ClassesManagement from './components/Dashboard/ClassesManagement';
 import MentorRoadmapManagement from './components/Dashboard/MentorRoadmapManagement';
 import ResumeBuilder from './components/Resume/ResumeBuilder';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 function App() {
@@ -193,6 +194,13 @@ function App() {
           {renderMainContent()}
         </div>
       </div>
+      <Toaster position="bottom-right" toastOptions={{
+        style: {
+          background: 'var(--bg-secondary)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--border-color)',
+        }
+      }} />
     </div>
   );
 }

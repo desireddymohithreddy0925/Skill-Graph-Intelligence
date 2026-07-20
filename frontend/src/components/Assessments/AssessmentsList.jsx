@@ -18,7 +18,9 @@ const AssessmentsList = ({ user, setActiveTab, setSelectedAssessmentId }) => {
       const endpoint = isStaff 
         ? `${import.meta.env.VITE_BASE_URL}/api/assessments/admin` 
         : `${import.meta.env.VITE_BASE_URL}/api/assessments`;
-      const res = await fetch(endpoint);
+      const res = await fetch(endpoint, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
       const data = await res.json();
       setAssessments(data);
     } catch (err) {
