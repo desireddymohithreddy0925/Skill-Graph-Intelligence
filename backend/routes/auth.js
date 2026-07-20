@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -75,11 +76,20 @@ router.post('/register', authLimiter, parseTokenIfExists, async (req, res) => {
     // Set default username based on email
     user.personalInfo.username = userEmail.split('@')[0];
 
-    await user.save();
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Create user's multi-tenant tracking documents
-    await UserProgress.create({ ...defaultUserProgress, userId: user.id });
-    await DashboardData.create({ ...defaultDashboardData, userId: user.id });
+    try {
+      await user.save({ session });
+      await UserProgress.create([{ ...defaultUserProgress, userId: user.id }], { session });
+      await DashboardData.create([{ ...defaultDashboardData, userId: user.id }], { session });
+      await session.commitTransaction();
+    } catch (transactionError) {
+      await session.abortTransaction();
+      throw transactionError; // will be caught by outer catch block
+    } finally {
+      session.endSession();
+    }
 
     // Create token for local session
     const payload = { user: { id: user.id } };
