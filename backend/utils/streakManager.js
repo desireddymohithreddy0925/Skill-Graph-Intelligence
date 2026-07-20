@@ -12,8 +12,8 @@ const updateStreak = async (userId) => {
     const now = new Date();
     const lastActivity = user.lastActivityDate;
 
-    // Normalize to midnight UTC for day comparisons
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Normalize to midnight UTC for absolute 24-hour day boundaries
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
     let updatedUser;
 
@@ -27,7 +27,7 @@ const updateStreak = async (userId) => {
         { new: true }
       );
     } else {
-      const lastDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
+      const lastDay = new Date(Date.UTC(lastActivity.getUTCFullYear(), lastActivity.getUTCMonth(), lastActivity.getUTCDate()));
       const diffDays = Math.floor((today - lastDay) / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0) {
@@ -78,9 +78,9 @@ const evaluateCurrentStreak = async (userId) => {
     const now = new Date();
     const lastActivity = user.lastActivityDate;
 
-    // Normalize to midnight
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const lastDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
+    // Normalize to absolute midnight UTC boundaries
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const lastDay = new Date(Date.UTC(lastActivity.getUTCFullYear(), lastActivity.getUTCMonth(), lastActivity.getUTCDate()));
     
     const diffDays = Math.floor((today - lastDay) / (1000 * 60 * 60 * 24));
 
