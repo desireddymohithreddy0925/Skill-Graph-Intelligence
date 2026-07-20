@@ -1,0 +1,32 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Fail if .env files are committed
+        run: |
+          ENV_FILES=$(find . -name "*.env" -o -name ".env" -o -name ".env.*" | grep -v ".example" || true)
+          if [ -n "$ENV_FILES" ]; then
+            echo "::error::Committed .env files detected! Never commit secrets."
+            echo "$ENV_FILES"
+            exit 1
+          fi
+
+      - name: Fail if Firebase service account keys are committed
+        run: |
+          SERVICE_KEYS=$(find . -name "*firebase-service-account*.json" | grep -v "example" || true)
+          if [ -n "$SERVICE_KEYS" ]; then
+            echo "::error::Committed Firebase Service Account key detected! This is a critical security breach."
+            echo "$SERVICE_KEYS"
+            exit 1
+          fi
