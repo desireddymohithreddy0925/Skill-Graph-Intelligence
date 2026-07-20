@@ -144,8 +144,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Title</label>
+            <label htmlFor="assessment-title" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Title</label>
             <input 
+              id="assessment-title"
               type="text" 
               className="transparent-input"
               value={title} 
@@ -155,8 +156,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
           </div>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Description</label>
+            <label htmlFor="assessment-description" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Description</label>
             <textarea 
+              id="assessment-description"
               className="transparent-input"
               value={description} 
               onChange={e => setDescription(e.target.value)} 
@@ -165,8 +167,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Type</label>
+            <label htmlFor="assessment-type" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Type</label>
             <select 
+              id="assessment-type"
               className="transparent-input"
               value={type} 
               onChange={e => setType(e.target.value)}
@@ -177,8 +180,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Time Limit (Minutes)</label>
+            <label htmlFor="assessment-time-limit" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Time Limit (Minutes)</label>
             <input 
+              id="assessment-time-limit"
               type="number" 
               className="transparent-input"
               value={timeLimit} 
@@ -190,8 +194,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
           </div>
 
           <div style={{ flex: '1 1 200px' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Target Classes</label>
+            <label htmlFor="assessment-target-classes" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Target Classes</label>
             <select 
+              id="assessment-target-classes"
               multiple 
               className="transparent-input"
               value={targetClasses} 
@@ -214,6 +219,7 @@ const CreateAssessment = ({ user, setActiveTab }) => {
               type="file" 
               accept="application/pdf" 
               onChange={handleFileUpload} 
+              aria-label="Upload PDF"
               style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
               disabled={isUploading}
             />
@@ -232,8 +238,9 @@ const CreateAssessment = ({ user, setActiveTab }) => {
               <Trash2 size={20} />
             </button>
             
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Question {qIndex + 1}</label>
+            <label htmlFor={`question-${qIndex}-text`} style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Question {qIndex + 1}</label>
             <textarea 
+              id={`question-${qIndex}-text`}
               className="transparent-input"
               value={q.questionText}
               onChange={e => handleQuestionChange(qIndex, 'questionText', e.target.value)}
@@ -243,11 +250,12 @@ const CreateAssessment = ({ user, setActiveTab }) => {
 
             {type === 'mcq' && (
               <div style={{ paddingLeft: '1rem', borderLeft: '2px solid var(--accent-primary)' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Options</label>
+                <span style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Options</span>
                 {q.options.map((opt, oIndex) => (
                   <div key={oIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <span style={{ color: 'var(--text-tertiary)' }}>{String.fromCharCode(65 + oIndex)}.</span>
+                    <label htmlFor={`question-${qIndex}-option-${oIndex}`} style={{ color: 'var(--text-tertiary)' }}>{String.fromCharCode(65 + oIndex)}.</label>
                     <input 
+                      id={`question-${qIndex}-option-${oIndex}`}
                       type="text"
                       className="transparent-input"
                       value={opt}
@@ -255,12 +263,15 @@ const CreateAssessment = ({ user, setActiveTab }) => {
                       placeholder={`Option ${oIndex + 1}`}
                       style={{ flex: 1, padding: '0.5rem', borderRadius: '0.25rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                     />
+                    <label htmlFor={`correct-${qIndex}-${oIndex}`} className="sr-only" style={{ display: 'none' }}>Mark Option {String.fromCharCode(65 + oIndex)} as correct</label>
                     <input 
+                      id={`correct-${qIndex}-${oIndex}`}
                       type="radio" 
                       name={`correct-${qIndex}`} 
                       checked={q.correctAnswer === opt && opt !== ''}
                       onChange={() => handleQuestionChange(qIndex, 'correctAnswer', opt)}
                       title="Mark as correct answer"
+                      aria-label={`Mark Option ${String.fromCharCode(65 + oIndex)} as correct`}
                     />
                   </div>
                 ))}

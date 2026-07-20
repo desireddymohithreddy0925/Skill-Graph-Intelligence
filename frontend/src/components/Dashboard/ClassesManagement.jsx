@@ -334,12 +334,12 @@ const ClassesManagement = ({ user }) => {
             
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'flex-end' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Skill / Topic Title</label>
-                <input type="text" value={newRoadmapNode.title} onChange={(e) => setNewRoadmapNode({...newRoadmapNode, title: e.target.value})} placeholder="e.g. React Fundamentals" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
+                <label htmlFor="roadmap-title" style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Skill / Topic Title</label>
+                <input id="roadmap-title" type="text" value={newRoadmapNode.title} onChange={(e) => setNewRoadmapNode({...newRoadmapNode, title: e.target.value})} placeholder="e.g. React Fundamentals" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Status</label>
-                <select value={newRoadmapNode.status} onChange={(e) => {
+                <label htmlFor="roadmap-status" style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Status</label>
+                <select id="roadmap-status" value={newRoadmapNode.status} onChange={(e) => {
                   const status = e.target.value;
                   const color = status === 'completed' ? 'var(--success)' : status === 'in-progress' ? 'var(--warning)' : 'var(--text-tertiary)';
                   setNewRoadmapNode({...newRoadmapNode, status, color});
@@ -434,12 +434,12 @@ const ClassesManagement = ({ user }) => {
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem', fontWeight: 'bold' }}>Or Add Manually:</p>
               <form onSubmit={handleManualAdd} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 150px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Email*</label>
-                  <input type="email" value={manualEmail} onChange={e => setManualEmail(e.target.value)} required style={{ width: '100%', padding: '0.5rem', borderRadius: '0.3rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                  <label htmlFor="student-email" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Email*</label>
+                  <input id="student-email" type="email" value={manualEmail} onChange={e => setManualEmail(e.target.value)} required style={{ width: '100%', padding: '0.5rem', borderRadius: '0.3rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                 </div>
                 <div style={{ flex: '1 1 150px' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Name</label>
-                  <input type="text" value={manualUsername} onChange={e => setManualUsername(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.3rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                  <label htmlFor="student-name" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Name</label>
+                  <input id="student-name" type="text" value={manualUsername} onChange={e => setManualUsername(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.3rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                 </div>
                 <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>Add</button>
               </form>
@@ -478,12 +478,12 @@ const ClassesManagement = ({ user }) => {
         </h3>
         <form onSubmit={handleSaveClass} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Class Name</label>
-            <input type="text" placeholder="e.g. Section A" value={className} onChange={(e) => setClassName(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+            <label htmlFor="class-name" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Class Name</label>
+            <input id="class-name" type="text" placeholder="e.g. Section A" value={className} onChange={(e) => setClassName(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
           </div>
           <div style={{ flex: '1 1 200px' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Academic Year</label>
-            <input type="text" placeholder="e.g. 2024-2025" value={classYear} onChange={(e) => setClassYear(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+            <label htmlFor="class-year" style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Academic Year</label>
+            <input id="class-year" type="text" placeholder="e.g. 2024-2025" value={classYear} onChange={(e) => setClassYear(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
           </div>
           <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem 2rem', height: '42px' }}>
             {editingId ? 'Update' : 'Create'}

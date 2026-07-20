@@ -288,7 +288,11 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
         </div>
         
         {timeLeft !== null && (
-          <div style={{ background: 'var(--bg-tertiary)', padding: '1rem 1.5rem', borderRadius: '0.5rem', border: `1px solid ${timeLeft < 60 ? 'var(--error)' : 'var(--accent-primary)'}`, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div 
+            style={{ background: 'var(--bg-tertiary)', padding: '1rem 1.5rem', borderRadius: '0.5rem', border: `1px solid ${timeLeft < 60 ? 'var(--error)' : 'var(--accent-primary)'}`, display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+            role="timer"
+            aria-label={`Time remaining: ${formatTime(timeLeft)}`}
+          >
             <Clock size={24} color={timeLeft < 60 ? 'var(--error)' : 'var(--accent-primary)'} />
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: timeLeft < 60 ? 'var(--error)' : 'var(--text-primary)' }}>
               {formatTime(timeLeft)}
@@ -320,26 +324,30 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {assessment.questions.map((q, qIndex) => (
           <div key={qIndex} style={{ background: 'var(--bg-secondary)', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ marginBottom: '1.5rem', lineHeight: '1.5' }}>
-              <span style={{ color: 'var(--accent-primary)', marginRight: '0.5rem' }}>Q{qIndex + 1}.</span> 
-              {q.questionText}
+            <h3 id={`question-${qIndex}-title`} style={{ marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              <span style={{ color: 'var(--accent-primary)', marginRight: '0.5rem' }} aria-hidden="true">Q{qIndex + 1}.</span> 
+              <span aria-label={`Question ${qIndex + 1}: ${q.questionText}`}>{q.questionText}</span>
             </h3>
             
             {assessment.type === 'mcq' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {q.options.map((opt, oIndex) => (
-                  <label key={oIndex} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: answers[qIndex]?.selectedOption === opt ? 'rgba(77, 171, 247, 0.1)' : 'var(--bg-tertiary)', border: `1px solid ${answers[qIndex]?.selectedOption === opt ? 'var(--accent-primary)' : 'var(--border-color)'}`, borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s' }}>
-                    <input 
-                      type="radio" 
-                      name={`question-${qIndex}`} 
-                      value={opt}
-                      checked={answers[qIndex]?.selectedOption === opt}
-                      onChange={() => handleSelectOption(qIndex, opt)}
-                      style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--accent-primary)' }}
-                    />
-                    <span style={{ fontSize: '1.05rem' }}>{opt}</span>
-                  </label>
-                ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} role="radiogroup" aria-labelledby={`question-${qIndex}-title`}>
+                {q.options.map((opt, oIndex) => {
+                  const inputId = `question-${qIndex}-option-${oIndex}`;
+                  return (
+                    <label key={oIndex} htmlFor={inputId} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: answers[qIndex]?.selectedOption === opt ? 'rgba(77, 171, 247, 0.1)' : 'var(--bg-tertiary)', border: `1px solid ${answers[qIndex]?.selectedOption === opt ? 'var(--accent-primary)' : 'var(--border-color)'}`, borderRadius: '0.5rem', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      <input 
+                        type="radio" 
+                        id={inputId}
+                        name={`question-${qIndex}`} 
+                        value={opt}
+                        checked={answers[qIndex]?.selectedOption === opt}
+                        onChange={() => handleSelectOption(qIndex, opt)}
+                        style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--accent-primary)' }}
+                      />
+                      <span style={{ fontSize: '1.05rem' }}>{opt}</span>
+                    </label>
+                  );
+                })}
               </div>
             ) : (
               <textarea 
