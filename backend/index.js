@@ -32,6 +32,20 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB Atlas'))
   .catch((err) => console.error('Error connecting to MongoDB:', err));
 
+// Monitor MongoDB connection health
+mongoose.connection.on('disconnected', () => {
+  console.error('MongoDB disconnected! Shutting down process to trigger orchestrator restart...');
+  process.exit(1); // Force crash so PM2/Docker can restart the healthy state
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('MongoDB reconnected successfully.');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
