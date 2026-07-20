@@ -62,8 +62,14 @@ router.post('/register', authLimiter, parseTokenIfExists, async (req, res) => {
 
     // Assign admin role if email is in the ADMIN_EMAILS environment variable
     const adminEmails = process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase()) : [];
-    if (adminEmails.includes(userEmail.toLowerCase())) {
-      user.role = 'admin';
+    const isAdminEmail = adminEmails.includes(userEmail.toLowerCase());
+
+    if (isAdminEmail) {
+      if (req.user) {
+        user.role = 'admin'; // Verified via Firebase
+      } else {
+        return res.status(403).json({ error: 'Administrator accounts must be registered using a verified SSO provider.' });
+      }
     }
 
     // Set default username based on email
