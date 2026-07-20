@@ -61,7 +61,7 @@ const Dashboard = ({ setActiveTab, user }) => {
   };
 
   if (loading) {
-    return <Loading message="Loading Insights..." fullScreen={true} />;
+    return <Loading message="Loading Insights..." fullScreen={false} />;
   }
 
   if (!data) {
