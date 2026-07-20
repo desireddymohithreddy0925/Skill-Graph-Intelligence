@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const admin = require('../firebaseAdmin');
+const User = require('../models/User');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const verifyToken = async (req, res, next) => {
@@ -13,6 +14,15 @@ const verifyToken = async (req, res, next) => {
   try {
     // Try to verify as standard JWT
     const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Enforce Token Versioning
+    if (decoded.user && decoded.user.id) {
+      const dbUser = await User.findById(decoded.user.id).select('tokenVersion');
+      if (!dbUser || dbUser.tokenVersion !== decoded.user.tokenVersion) {
+        return res.status(401).json({ error: 'Token has been revoked or expired' });
+      }
+    }
+    
     req.user = decoded.user;
     return next();
   } catch (err) {

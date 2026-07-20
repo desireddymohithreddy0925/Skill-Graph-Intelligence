@@ -92,7 +92,12 @@ router.post('/register', authLimiter, parseTokenIfExists, async (req, res) => {
     }
 
     // Create token for local session
-    const payload = { user: { id: user.id } };
+    const payload = { 
+      user: { 
+        id: user.id,
+        tokenVersion: user.tokenVersion
+      } 
+    };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
@@ -139,7 +144,12 @@ router.post('/login', authLimiter, parseTokenIfExists, async (req, res) => {
     }
 
     // Create token
-    const payload = { user: { id: user.id } };
+    const payload = { 
+      user: { 
+        id: user.id,
+        tokenVersion: user.tokenVersion
+      } 
+    };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
     res.status(200).json({
@@ -155,6 +165,19 @@ router.post('/login', authLimiter, parseTokenIfExists, async (req, res) => {
   } catch (err) {
     console.error('Login error:', err.message);
     res.status(500).json({ error: 'Server error during login' });
+  }
+});
+
+// @route   POST /api/auth/logout
+// @desc    Logout user by incrementing token version
+// @access  Private
+router.post('/logout', verifyToken, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user.id, { $inc: { tokenVersion: 1 } });
+    res.json({ message: 'Successfully logged out across all devices.' });
+  } catch (err) {
+    console.error('Logout error:', err.message);
+    res.status(500).json({ error: 'Server error during logout' });
   }
 });
 
