@@ -1,10 +1,31 @@
 import React from 'react';
-import { TrendingUp, Award, Gift, Flame, Check } from 'lucide-react';
+import { TrendingUp, TrendingDown, Award, Gift, Flame, Check } from 'lucide-react';
 
 const GamificationCenter = ({ data, stats }) => {
   if (!data) return null;
   const xpData = data.xpVelocity;
   const maxXP = Math.max(...xpData);
+
+  const totalXP = xpData.reduce((a, b) => a + b, 0);
+  const dailyAverage = xpData.length > 0 ? Math.round(totalXP / xpData.length) : 0;
+
+  const midPoint = Math.floor(xpData.length / 2);
+  const historicalData = xpData.slice(0, midPoint);
+  const recentData = xpData.slice(midPoint);
+  
+  const historicalAvg = historicalData.length > 0 ? historicalData.reduce((a, b) => a + b, 0) / historicalData.length : 0;
+  const recentAvg = recentData.length > 0 ? recentData.reduce((a, b) => a + b, 0) / recentData.length : 0;
+  
+  let trendPercentage = 0;
+  if (historicalAvg > 0) {
+    trendPercentage = Math.round(((recentAvg - historicalAvg) / historicalAvg) * 100);
+  } else if (recentAvg > 0) {
+    trendPercentage = 100;
+  }
+  
+  const isPositiveTrend = trendPercentage >= 0;
+  const TrendIcon = isPositiveTrend ? TrendingUp : TrendingDown;
+  const trendColor = isPositiveTrend ? 'var(--accent-primary)' : 'var(--error)';
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -89,10 +110,10 @@ const GamificationCenter = ({ data, stats }) => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Daily Average: <span style={{ color: 'var(--accent-primary)', fontWeight: '600' }}>145 XP</span></span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Daily Average: <span style={{ color: 'var(--accent-primary)', fontWeight: '600' }}>{dailyAverage} XP</span></span>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <TrendingUp size={14} color="var(--accent-primary)" />
-              +12%
+              <TrendIcon size={14} color={trendColor} />
+              <span style={{ color: trendColor }}>{isPositiveTrend ? '+' : ''}{trendPercentage}%</span>
             </span>
           </div>
         </div>
