@@ -10,11 +10,14 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+};
+
 const io = new Server(server, {
-  cors: {
-    origin: "*", // allow all origins for dev
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions
 });
 const PORT = process.env.PORT || 5001;
 
@@ -24,7 +27,7 @@ mongoose.connect(process.env.MONGO_URI)
   .catch((err) => console.error('Error connecting to MongoDB:', err));
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Attach socket io to req
