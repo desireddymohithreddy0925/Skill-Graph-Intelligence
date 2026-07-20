@@ -130,3 +130,21 @@ if (process.env.NODE_ENV === 'production') {
 server.listen(PORT, () => {
   console.log(`Server is running perfectly on http://localhost:${PORT}`);
 });
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.log('UNHANDLED REJECTION! 💥 Shutting down gracefully...');
+  console.error(err);
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.log('UNCAUGHT EXCEPTION! 💥 Shutting down gracefully...');
+  console.error(err);
+  server.close(() => {
+    process.exit(1);
+  });
+});
