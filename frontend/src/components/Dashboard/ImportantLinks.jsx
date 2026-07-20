@@ -19,7 +19,7 @@ const ImportantLinks = ({ user }) => {
   const fetchClasses = useCallback(async () => {
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       const data = await res.json();
       setAvailableClasses(data);
@@ -29,7 +29,7 @@ const ImportantLinks = ({ user }) => {
   const fetchLinks = useCallback(async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/links${user?._id ? `?userId=${user._id}` : ''}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       const data = await res.json();
       setLinks(data);
@@ -51,7 +51,7 @@ const ImportantLinks = ({ user }) => {
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/links', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ title, url, targetClasses, createdBy: user._id })
       });
       if (res.ok) {
@@ -75,7 +75,7 @@ const ImportantLinks = ({ user }) => {
     try {
       await fetch(`${import.meta.env.VITE_BASE_URL}/api/links/${linkToDelete}`, { 
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       fetchLinks();
       toast.success('Link deleted successfully');

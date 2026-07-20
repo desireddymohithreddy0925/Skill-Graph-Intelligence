@@ -82,7 +82,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
   const fetchAssessment = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       const data = await res.json();
       
@@ -155,10 +155,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}/submit`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+        headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
           studentId: user._id,
           answers,

@@ -64,7 +64,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
           
           // Connect socket
           const newSocket = io(import.meta.env.VITE_BASE_URL || '', {
-            auth: { token: localStorage.getItem('token') }
+            withCredentials: true
           });
           setSocket(newSocket);
           

@@ -100,9 +100,15 @@ router.post('/register', authLimiter, parseTokenIfExists, async (req, res) => {
     };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.status(201).json({
       message: 'User registered successfully',
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -152,9 +158,15 @@ router.post('/login', authLimiter, parseTokenIfExists, async (req, res) => {
     };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.status(200).json({
       message: 'Login successful',
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -174,6 +186,7 @@ router.post('/login', authLimiter, parseTokenIfExists, async (req, res) => {
 router.post('/logout', verifyToken, async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.user.id, { $inc: { tokenVersion: 1 } });
+    res.clearCookie('token');
     res.json({ message: 'Successfully logged out across all devices.' });
   } catch (err) {
     console.error('Logout error:', err.message);

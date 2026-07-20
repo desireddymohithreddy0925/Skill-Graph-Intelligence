@@ -19,7 +19,7 @@ const AssessmentsList = ({ user, setActiveTab, setSelectedAssessmentId }) => {
         ? `${import.meta.env.VITE_BASE_URL}/api/assessments/admin` 
         : `${import.meta.env.VITE_BASE_URL}/api/assessments`;
       const res = await fetch(endpoint, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       const data = await res.json();
       setAssessments(data.data || data);

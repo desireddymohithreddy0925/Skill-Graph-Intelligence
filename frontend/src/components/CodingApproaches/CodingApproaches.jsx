@@ -33,7 +33,7 @@ const CodingApproaches = ({ user }) => {
   const fetchClasses = async () => {
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       const data = await res.json();
       setAvailableClasses(data);
@@ -43,7 +43,7 @@ const CodingApproaches = ({ user }) => {
   const fetchProblems = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/coding-problems${user?._id ? `?userId=${user._id}` : ''}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -65,7 +65,7 @@ const CodingApproaches = ({ user }) => {
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/coding-problems', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ title, url, platform, difficulty, targetClasses, createdBy: user._id })
       });
       if (res.ok) {
@@ -93,7 +93,7 @@ const CodingApproaches = ({ user }) => {
     try {
       await fetch(`${import.meta.env.VITE_BASE_URL}/api/coding-problems/${problemToDelete}`, { 
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       fetchProblems();
       toast.success('Problem deleted successfully');

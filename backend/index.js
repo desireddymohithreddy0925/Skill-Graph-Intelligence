@@ -4,6 +4,8 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const cookieParser = require('cookie-parser');
+const cookie = require('cookie');
 const mongoose = require('mongoose');
 
 // Load environment variables
@@ -49,6 +51,7 @@ mongoose.connection.on('error', (err) => {
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '100kb' }));
+app.use(cookieParser());
 
 // Attach socket io to req
 app.use((req, res, next) => {
@@ -89,7 +92,8 @@ app.use('/api/complaints', complaintsRoutes);
 
 // Socket.io logic for SkillTMeter
 io.use((socket, next) => {
-  const token = socket.handshake.auth?.token;
+  const cookies = cookie.parse(socket.handshake.headers.cookie || '');
+  const token = cookies.token || socket.handshake.auth?.token;
   if (!token) {
     return next(new Error('Authentication error: Token missing'));
   }
