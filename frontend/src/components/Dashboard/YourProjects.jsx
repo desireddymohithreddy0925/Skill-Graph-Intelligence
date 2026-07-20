@@ -18,11 +18,7 @@ const YourProjects = ({ user }) => {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      const url = new URL(import.meta.env.VITE_BASE_URL + '/api/projects');
-      url.searchParams.append('email', user.email);
-      url.searchParams.append('role', user.role);
-      
-      const response = await fetch(url);
+      const response = await fetch(import.meta.env.VITE_BASE_URL + '/api/projects');
       if (response.ok) {
         const data = await response.json();
         setProjects(data);
