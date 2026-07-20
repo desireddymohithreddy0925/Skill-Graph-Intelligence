@@ -4,12 +4,11 @@ const User = require('../models/User');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const verifyToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = req.cookies?.token || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split('Bearer ')[1] : null);
+  
+  if (!token) {
     return res.status(401).json({ error: 'No token, authorization denied' });
   }
-
-  const token = authHeader.split('Bearer ')[1];
 
   try {
     // Try to verify as standard JWT
@@ -45,9 +44,8 @@ const verifyToken = async (req, res, next) => {
 
 // Also export a non-strict version for Login/Register routes where we just want to parse the token if it exists
 const parseTokenIfExists = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split('Bearer ')[1];
+  const token = req.cookies?.token || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split('Bearer ')[1] : null);
+  if (token) {
     try {
       if (admin) {
         const decodedToken = await admin.verifyIdToken(token);

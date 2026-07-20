@@ -31,7 +31,7 @@ const CreateAssessment = ({ user, setActiveTab }) => {
   const fetchClasses = async () => {
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
       const data = await res.json();
       setAvailableClasses(data);
@@ -75,7 +75,7 @@ const CreateAssessment = ({ user, setActiveTab }) => {
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/assessments/upload-pdf', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        credentials: 'include',
         body: formData
       });
       const data = await res.json();
@@ -109,10 +109,7 @@ const CreateAssessment = ({ user, setActiveTab }) => {
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/assessments', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+        headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ title, description, type, timeLimit, questions, targetClasses, createdBy: user._id || user.id })
       });
       const data = await res.json();

@@ -11,19 +11,13 @@ window.fetch = async (...args) => {
   let [resource, config] = args;
   
   if (typeof resource === 'string' && resource.includes('/api')) {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config = config || {};
-      config.headers = {
-        ...config.headers,
-        'Authorization': `Bearer ${token}`
-      };
-    }
+    config = config || {};
+    config.credentials = 'include';
   } else if (resource instanceof Request && resource.url.includes('/api')) {
-    const token = localStorage.getItem('token');
-    if (token) {
-      resource.headers.set('Authorization', `Bearer ${token}`);
-    }
+    // If it's a Request object, we don't modify it directly here since credentials is read-only.
+    // Instead we attach it to the config which overrides the Request's credentials.
+    config = config || {};
+    config.credentials = 'include';
   }
   
   const response = await originalFetch(resource, config);

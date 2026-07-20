@@ -88,7 +88,8 @@ const Login = ({ onLogin }) => {
         const response = await fetch(`${import.meta.env.VITE_BASE_URL}${endpoint}`, {
           method: 'POST',
           headers: headers,
-          body: JSON.stringify({ email: userEmail })
+          body: JSON.stringify({ email: userEmail, username: userObj?.displayName }),
+          credentials: 'include'
         });
         
         const data = await response.json();
@@ -96,7 +97,9 @@ const Login = ({ onLogin }) => {
         if (response.ok) {
           onLogin(data.user);
           // Also store the standard token if the backend returns one, or just rely on Firebase
-          if (data.token) localStorage.setItem('token', data.token);
+          if (data.token) {
+            // Token is now set securely via HttpOnly cookie by the backend
+          }
         } else {
           toast.error(data.error || 'Authentication failed');
           if (!isRegistering && data.error && data.error.includes('create an account')) {

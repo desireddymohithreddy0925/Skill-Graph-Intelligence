@@ -123,12 +123,11 @@ function App() {
     try {
       await fetch(`${import.meta.env.VITE_BASE_URL}/api/auth/logout`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'include'
       });
     } catch (err) {
       console.error('Logout error:', err);
     }
-    localStorage.removeItem('token');
     setIsLoggedIn(false);
     setUser(null);
   };
