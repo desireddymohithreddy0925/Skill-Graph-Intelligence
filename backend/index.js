@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cookie = require('cookie');
 const mongoose = require('mongoose');
+const helmet = require('helmet');
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +50,7 @@ mongoose.connection.on('error', (err) => {
 });
 
 // Middleware
+app.use(helmet());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '100kb' }));
 app.use(cookieParser());
