@@ -1,13 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const Assignment = require('../models/Assignment');
+const User = require('../models/User');
 const { updateStreak } = require('../utils/streakManager');
+const { verifyToken } = require('../middleware/auth');
+const { requireStaff } = require('../middleware/roles');
 
-// Create a new assignment
-router.post('/', async (req, res) => {
+// Create a new assignment (Staff only)
+router.post('/', verifyToken, requireStaff, async (req, res) => {
   try {
     const { mentorId, studentId, title, description, dueDate } = req.body;
-    const assignment = new Assignment({ mentorId, studentId, title, description, dueDate });
+    // ensure mentor is the current user
+    const assignment = new Assignment({ mentorId: req.user.id, studentId, title, description, dueDate });
     await assignment.save();
     res.status(201).json(assignment);
   } catch (err) {
@@ -16,8 +20,15 @@ router.post('/', async (req, res) => {
 });
 
 // Get assignments for a student
-router.get('/student/:id', async (req, res) => {
+router.get('/student/:id', verifyToken, async (req, res) => {
   try {
+    // IDOR protection
+    if (req.user.id !== req.params.id) {
+       const user = await User.findById(req.user.id);
+       if (!user || !['admin', 'sub admin', 'manager', 'mentor'].includes(user.role)) {
+         return res.status(403).json({ error: 'Forbidden' });
+       }
+    }
     const assignments = await Assignment.find({ studentId: req.params.id }).populate('mentorId', 'personalInfo.username email').sort({ createdAt: -1 });
     res.json(assignments);
   } catch (err) {
@@ -26,10 +37,15 @@ router.get('/student/:id', async (req, res) => {
 });
 
 // Mark assignment as completed
-router.put('/:id/complete', async (req, res) => {
+router.put('/:id/complete', verifyToken, async (req, res) => {
   try {
     const assignment = await Assignment.findById(req.params.id);
     if (!assignment) return res.status(404).json({ error: 'Not found' });
+    
+    // IDOR protection
+    if (assignment.studentId.toString() !== req.user.id) {
+       return res.status(403).json({ error: 'Forbidden' });
+    }
     
     assignment.isCompleted = true;
     await assignment.save();

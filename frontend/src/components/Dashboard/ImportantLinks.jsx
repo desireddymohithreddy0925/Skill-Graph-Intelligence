@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, ExternalLink, Plus, Trash2 } from 'lucide-react';
-import './Dashboard.css'; // Reusing dashboard styles
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
+import './Dashboard.css';
 
 const ImportantLinks = ({ user }) => {
   const [links, setLinks] = useState([]);
@@ -9,6 +11,8 @@ const ImportantLinks = ({ user }) => {
   const [targetClasses, setTargetClasses] = useState([]);
   const [availableClasses, setAvailableClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [linkToDelete, setLinkToDelete] = useState(null);
 
   const isStaff = ['admin', 'sub admin', 'manager', 'mentor'].includes(user?.role);
 
@@ -43,7 +47,7 @@ const ImportantLinks = ({ user }) => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!title || !url) return alert('Title and URL are required');
+    if (!title || !url) { toast.error('Title and URL are required'); return; }
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/links', {
         method: 'POST',
@@ -61,16 +65,26 @@ const ImportantLinks = ({ user }) => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this link?')) return;
+  const requestDelete = (id) => {
+    setLinkToDelete(id);
+    setConfirmModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!linkToDelete) return;
     try {
-      await fetch(`${import.meta.env.VITE_BASE_URL}/api/links/${id}`, { 
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/links/${linkToDelete}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       fetchLinks();
+      toast.success('Link deleted successfully');
     } catch (err) {
       console.error(err);
+      toast.error('Failed to delete link');
+    } finally {
+      setConfirmModalOpen(false);
+      setLinkToDelete(null);
     }
   };
 
@@ -125,7 +139,7 @@ const ImportantLinks = ({ user }) => {
                   {link.title}
                 </h3>
                 {isStaff && (
-                  <button onClick={() => handleDelete(link._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }} title="Delete Link">
+                  <button onClick={() => requestDelete(link._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }} title="Delete Link">
                     <Trash2 size={16} />
                   </button>
                 )}
@@ -143,6 +157,20 @@ const ImportantLinks = ({ user }) => {
           ))}
         </div>
       )}
+      
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Delete Link?"
+        message="Are you sure you want to delete this link? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setLinkToDelete(null);
+        }}
+      />
     </div>
   );
 };

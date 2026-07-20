@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertTriangle, ChevronRight, Zap } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const ResumeBuilder = ({ user }) => {
   const [pastResume, setPastResume] = useState(null);
@@ -17,7 +18,7 @@ const ResumeBuilder = ({ user }) => {
 
   const handleAnalyze = async () => {
     if (!pastResume || !presentResume) {
-      alert("Please upload both past and present resumes for comparison.");
+      toast.error("Please upload both past and present resumes for comparison.");
       return;
     }
     

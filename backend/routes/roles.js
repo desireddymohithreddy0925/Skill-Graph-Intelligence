@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Role = require('../models/Role');
 const User = require('../models/User');
+const { verifyToken } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/roles');
 
 // Get all dynamic roles
-router.get('/', async (req, res) => {
+router.get('/', verifyToken, requireAdmin, async (req, res) => {
   try {
     const roles = await Role.find().sort({ createdAt: -1 });
     res.json(roles);
@@ -14,7 +16,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new dynamic role
-router.post('/', async (req, res) => {
+router.post('/', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { name, description } = req.body;
     const role = new Role({ name: name.toLowerCase(), description });
@@ -27,7 +29,7 @@ router.post('/', async (req, res) => {
 });
 
 // Delete a dynamic role
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     await Role.findByIdAndDelete(req.params.id);
     res.json({ success: true });
@@ -37,7 +39,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Assign a role to a user by email
-router.put('/assign', async (req, res) => {
+router.put('/assign', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { email, roleName } = req.body;
     

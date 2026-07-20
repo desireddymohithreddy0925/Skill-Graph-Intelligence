@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Code2, Link, Cloud, Plus, ExternalLink, Trash2, Search, User, Hash } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import './YourProjects.css';
 
 const YourProjects = ({ user }) => {
@@ -14,6 +16,10 @@ const YourProjects = ({ user }) => {
     onedriveLink: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Delete confirm state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
 
   const fetchProjects = async () => {
     setIsLoading(true);
@@ -58,29 +64,43 @@ const YourProjects = ({ user }) => {
       if (response.ok) {
         setFormData({ projectName: '', studentName: '', rollNumber: '', githubLink: '', onedriveLink: '' });
         fetchProjects();
+        toast.success('Project added successfully');
       } else {
-        alert('Failed to add project');
+        toast.error('Failed to add project');
       }
     } catch (error) {
       console.error('Error adding project:', error);
+      toast.error('Error adding project');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
+  const requestDelete = (id) => {
+    setProjectToDelete(id);
+    setConfirmModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!projectToDelete) return;
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/api/projects/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/api/projects/${projectToDelete}`, {
         method: 'DELETE'
       });
       
       if (response.ok) {
         fetchProjects();
+        toast.success('Project deleted successfully');
+      } else {
+        toast.error('Failed to delete project');
       }
     } catch (error) {
       console.error('Error deleting project:', error);
+      toast.error('Error deleting project');
+    } finally {
+      setConfirmModalOpen(false);
+      setProjectToDelete(null);
     }
   };
 
@@ -222,7 +242,7 @@ const YourProjects = ({ user }) => {
                   </div>
                   {!['admin', 'sub admin', 'manager'].includes(user?.role) && (
                     <button 
-                      onClick={() => handleDelete(project._id)}
+                      onClick={() => requestDelete(project._id)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}
                       title="Delete Project"
                     >
@@ -248,6 +268,20 @@ const YourProjects = ({ user }) => {
           </div>
         )}
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Delete Project?"
+        message="Are you sure you want to delete this project submission? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setProjectToDelete(null);
+        }}
+      />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Trash2, Network } from 'lucide-react';
+import toast from 'react-hot-toast';
 import '../Dashboard/Dashboard.css';
 
 const MentorRoadmapManagement = () => {
@@ -55,18 +56,18 @@ const MentorRoadmapManagement = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ skillRoadmap: studentRoadmap })
         });
-        if (res.ok) alert('Roadmap updated successfully');
+        if (res.ok) toast.success('Roadmap updated successfully');
       } else {
         const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/class/${selectedClass._id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ skillRoadmap: studentRoadmap })
         });
-        if (res.ok) alert('Roadmap successfully broadcasted to entire class!');
+        if (res.ok) toast.success('Roadmap successfully broadcasted to entire class!');
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to update roadmap');
+      toast.error('Failed to update roadmap');
     }
   };
 

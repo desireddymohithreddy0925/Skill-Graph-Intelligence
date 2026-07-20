@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Users, BookOpen, Trash2, Edit2, UserPlus, Upload, Shield } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ConfirmModal from '../ui/ConfirmModal';
 import '../Dashboard/Dashboard.css';
 
 const ClassesManagement = ({ user }) => {
   const [classesList, setClassesList] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Delete confirm state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [classToDelete, setClassToDelete] = useState(null);
   
   // Create / Edit State
   const [editingId, setEditingId] = useState(null);
@@ -47,7 +53,7 @@ const ClassesManagement = ({ user }) => {
 
   const handleSaveClass = async (e) => {
     e.preventDefault();
-    if (!className || !classYear) return alert('Name and Year are required');
+    if (!className || !classYear) { toast.error('Name and Year are required'); return; }
 
     try {
       if (editingId) {
@@ -70,12 +76,24 @@ const ClassesManagement = ({ user }) => {
     } catch (err) { console.error(err); }
   };
 
-  const handleDeleteClass = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this class? All students will be unassigned.')) return;
+  const requestDeleteClass = (id) => {
+    setClassToDelete(id);
+    setConfirmModalOpen(true);
+  };
+
+  const handleDeleteClass = async () => {
+    if (!classToDelete) return;
     try {
-      await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${id}`, { method: 'DELETE' });
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${classToDelete}`, { method: 'DELETE' });
       fetchClasses();
-    } catch (err) { console.error(err); }
+      toast.success('Class deleted successfully');
+    } catch (err) { 
+      console.error(err); 
+      toast.error('Failed to delete class');
+    } finally {
+      setConfirmModalOpen(false);
+      setClassToDelete(null);
+    }
   };
 
   // ----- Inside Class View -----
@@ -131,14 +149,15 @@ const ClassesManagement = ({ user }) => {
     const formData = new FormData();
     formData.append('file', file);
 
+    const toastId = toast.loading('Uploading and parsing CSV... This might take a moment.');
+
     try {
-      alert('Uploading and parsing CSV... This might take a moment.');
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${selectedClass._id}/upload-csv`, {
         method: 'POST',
         body: formData
       });
       const data = await res.json();
-      alert(data.message || 'Upload complete');
+      toast.success(data.message || 'Upload complete', { id: toastId });
       
       // Refresh details
       fetchClassDetails(selectedClass);
@@ -146,13 +165,13 @@ const ClassesManagement = ({ user }) => {
       if(fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
       console.error(err);
-      alert('Error uploading file');
+      toast.error('Error uploading file', { id: toastId });
     }
   };
 
   const handleManualAdd = async (e) => {
     e.preventDefault();
-    if (!manualEmail) return alert('Email is required');
+    if (!manualEmail) { toast.error('Email is required'); return; }
     try {
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/classes/${selectedClass._id}/add-student-manual`, {
         method: 'POST',
@@ -161,17 +180,17 @@ const ClassesManagement = ({ user }) => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert('Student added successfully');
+        toast.success('Student added successfully');
         setManualEmail('');
         setManualUsername('');
         fetchClassDetails(selectedClass);
         fetchClasses();
       } else {
-        alert(data.error || 'Failed to add student');
+        toast.error(data.error || 'Failed to add student');
       }
     } catch (err) {
       console.error(err);
-      alert('Error adding student');
+      toast.error('Error adding student');
     }
   };
 
@@ -208,11 +227,11 @@ const ClassesManagement = ({ user }) => {
         body: JSON.stringify({ skillRoadmap: studentRoadmap })
       });
       if(res.ok) {
-        alert('Roadmap updated successfully');
+        toast.success('Roadmap updated successfully');
       }
     } catch(err) {
       console.error(err);
-      alert('Failed to update roadmap');
+      toast.error('Failed to update roadmap');
     }
   };
 
@@ -488,7 +507,7 @@ const ClassesManagement = ({ user }) => {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button onClick={() => { setEditingId(cls._id); setClassName(cls.name); setClassYear(cls.year); }} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><Edit2 size={16}/></button>
-                  <button onClick={() => handleDeleteClass(cls._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}><Trash2 size={16}/></button>
+                  <button onClick={() => requestDeleteClass(cls._id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}><Trash2 size={16}/></button>
                 </div>
               </div>
 
@@ -509,6 +528,20 @@ const ClassesManagement = ({ user }) => {
           {classesList.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No classes created yet.</p>}
         </div>
       )}
+
+      <ConfirmModal 
+        isOpen={confirmModalOpen}
+        title="Delete Class?"
+        message="Are you sure you want to delete this class? All assigned students will be unassigned from this class. This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+        onConfirm={handleDeleteClass}
+        onCancel={() => {
+          setConfirmModalOpen(false);
+          setClassToDelete(null);
+        }}
+      />
     </div>
   );
 };
