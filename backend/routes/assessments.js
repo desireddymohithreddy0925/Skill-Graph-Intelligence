@@ -9,6 +9,24 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const { verifyToken } = require('../middleware/auth');
 const { requireStaff } = require('../middleware/roles');
+const Joi = require('joi');
+const { validateBody } = require('../middleware/validate');
+
+const assessmentSchema = Joi.object({
+  title: Joi.string().max(150).required(),
+  description: Joi.string().max(2000).required(),
+  type: Joi.string().valid('mcq', 'coding', 'mixed').required(),
+  timeLimit: Joi.number().min(1).max(300).required(),
+  questions: Joi.array().items(
+    Joi.object({
+      questionText: Joi.string().required(),
+      options: Joi.array().items(Joi.string()).optional(),
+      correctAnswer: Joi.string().required()
+    })
+  ).required(),
+  targetClasses: Joi.array().items(Joi.string()).optional(),
+  createdBy: Joi.string().required()
+});
 
 const upload = multer({ dest: 'uploads/' });
 
@@ -59,7 +77,7 @@ router.get('/admin', verifyToken, requireStaff, async (req, res) => {
 });
 
 // Create an assessment (Staff only)
-router.post('/', verifyToken, requireStaff, async (req, res) => {
+router.post('/', verifyToken, requireStaff, validateBody(assessmentSchema), async (req, res) => {
   try {
     const { title, description, type, timeLimit, questions, targetClasses, createdBy } = req.body;
     const assessment = new Assessment({ title, description, type, timeLimit, questions, targetClasses, createdBy });

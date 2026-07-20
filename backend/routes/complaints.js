@@ -5,9 +5,16 @@ const Class = require('../models/Class');
 const User = require('../models/User');
 const { verifyToken } = require('../middleware/auth');
 const { requireStaff } = require('../middleware/roles');
+const Joi = require('joi');
+const { validateBody } = require('../middleware/validate');
+
+const complaintSchema = Joi.object({
+  title: Joi.string().max(100).required(),
+  description: Joi.string().max(2000).required()
+});
 
 // Student submits a complaint
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, validateBody(complaintSchema), async (req, res) => {
   try {
     const { title, description } = req.body;
     
