@@ -9,8 +9,14 @@ Thumbs.db
 
 # Node
 node_modules/
+/node_modules/
 
 # Firebase Private Keys
 firebase-service-account.json
 *firebase*.json
 !firebase-service-account.example.json
+
+# Keys and Certs
+*.pem
+*.key
+*.p12
