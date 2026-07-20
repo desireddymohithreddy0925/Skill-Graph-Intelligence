@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
 
 const presentationSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+  title: { type: String, maxLength: 5000, required: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  joinCode: { type: String, required: true, unique: true }, // 6-digit code
+  joinCode: { type: String, maxLength: 5000, required: true, unique: true }, // 6-digit code
   isActive: { type: Boolean, default: true },
   currentSlideIndex: { type: Number, default: 0 },
   slideStartTime: { type: Date, default: null }, // Track when slide was shown
   slides: [{
-    type: { type: String, enum: ['poll', 'wordcloud', 'qa'], required: true },
-    question: { type: String, required: true },
-    options: [{ type: String }], // For polls
+    type: { type: String, maxLength: 5000, enum: ['poll', 'wordcloud', 'qa'], required: true },
+    question: { type: String, maxLength: 5000, required: true },
+    options: [{ type: String, maxLength: 5000 }], // For polls
     allowMultipleVotes: { type: Boolean, default: false }, // For wordcloud and polls
     timeLimit: { type: Number, default: 30 }, // Seconds
     correctOptionIndex: { type: Number, default: -1 }, // -1 means no correct answer
@@ -35,9 +35,9 @@ const presentationSchema = new mongoose.Schema({
     qa: [{
       slideIndex: Number,
       questionText: String,
-      author: { type: String, default: 'Anonymous' },
+      author: { type: String, maxLength: 5000, default: 'Anonymous' },
       upvotes: { type: Number, default: 0 },
-      upvotedBy: [{ type: String }],
+      upvotedBy: [{ type: String, maxLength: 5000 }],
       isAnswered: { type: Boolean, default: false },
       createdAt: { type: Date, default: Date.now }
     }]

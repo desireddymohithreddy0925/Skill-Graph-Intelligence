@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  email: { type: String, required: true, unique: true, maxLength: 255 },
+  password: { type: String, required: true, maxLength: 1024 },
   tokenVersion: { type: Number, default: 0 },
   role: { type: String, default: 'student' },
   xp: { type: Number, default: 0 },
@@ -13,28 +13,28 @@ const userSchema = new mongoose.Schema({
   
   // Personal Info
   personalInfo: {
-    username: { type: String, default: '' },
-    institute: { type: String, default: '' },
-    rollNumber: { type: String, default: '' },
-    phoneNumber: { type: String, default: '' },
-    department: { type: String, default: '' },
-    passoutYear: { type: String, default: '' },
-    gender: { type: String, default: '' },
+    username: { type: String, default: '', maxLength: 255 },
+    institute: { type: String, default: '', maxLength: 255 },
+    rollNumber: { type: String, default: '', maxLength: 100 },
+    phoneNumber: { type: String, default: '', maxLength: 20 },
+    department: { type: String, default: '', maxLength: 255 },
+    passoutYear: { type: String, default: '', maxLength: 10 },
+    gender: { type: String, default: '', maxLength: 50 },
   },
 
   // Social Profile
   socialProfile: {
-    githubUrl: { type: String, default: '' },
-    linkedInUrl: { type: String, default: '' },
+    githubUrl: { type: String, default: '', maxLength: 1000 },
+    linkedInUrl: { type: String, default: '', maxLength: 1000 },
   },
 
   // Coding Platforms
   codingProfiles: {
-    leetcode: { type: String, default: '' },
-    hackerrank: { type: String, default: '' },
-    codechef: { type: String, default: '' },
-    codeforces: { type: String, default: '' },
-    atcoder: { type: String, default: '' },
+    leetcode: { type: String, default: '', maxLength: 255 },
+    hackerrank: { type: String, default: '', maxLength: 255 },
+    codechef: { type: String, default: '', maxLength: 255 },
+    codeforces: { type: String, default: '', maxLength: 255 },
+    atcoder: { type: String, default: '', maxLength: 255 },
   },
   
   createdAt: { type: Date, default: Date.now }

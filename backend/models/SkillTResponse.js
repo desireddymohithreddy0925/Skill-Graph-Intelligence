@@ -2,19 +2,19 @@ const mongoose = require('mongoose');
 
 const skillTResponseSchema = new mongoose.Schema({
   userEmail: {
-    type: String,
+    type: String, maxLength: 5000,
     required: true
   },
   studentName: {
-    type: String,
+    type: String, maxLength: 5000,
     required: true
   },
   batch: {
-    type: String,
+    type: String, maxLength: 5000,
     required: true
   },
   word: {
-    type: String,
+    type: String, maxLength: 5000,
     required: true,
     trim: true
   },
