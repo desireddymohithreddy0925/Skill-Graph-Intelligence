@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const UserProgress = require('../models/UserProgress');
 const DashboardData = require('../models/DashboardData');
@@ -19,10 +20,17 @@ const validateEmail = (email) => {
 
 const { parseTokenIfExists } = require('../middleware/auth');
 
+// Throttle auth requests to prevent brute-force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
+});
+
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
-router.post('/register', parseTokenIfExists, async (req, res) => {
+router.post('/register', authLimiter, parseTokenIfExists, async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -90,7 +98,7 @@ router.post('/register', parseTokenIfExists, async (req, res) => {
 // @route   POST /api/auth/login
 // @desc    Login user & get token
 // @access  Public
-router.post('/login', parseTokenIfExists, async (req, res) => {
+router.post('/login', authLimiter, parseTokenIfExists, async (req, res) => {
   try {
     const { email, password } = req.body;
     
