@@ -31,19 +31,21 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 5005;
 
 // Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB Atlas'))
-  .catch((err) => console.error('Error connecting to MongoDB:', err));
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('Connected to MongoDB Atlas'))
+    .catch((err) => console.error('Error connecting to MongoDB:', err));
 
-// Monitor MongoDB connection health
-mongoose.connection.on('disconnected', () => {
-  console.error('MongoDB disconnected! Shutting down process to trigger orchestrator restart...');
-  process.exit(1); // Force crash so PM2/Docker can restart the healthy state
-});
+  // Monitor MongoDB connection health
+  mongoose.connection.on('disconnected', () => {
+    console.error('MongoDB disconnected! Shutting down process to trigger orchestrator restart...');
+    process.exit(1); // Force crash so PM2/Docker can restart the healthy state
+  });
 
-mongoose.connection.on('reconnected', () => {
-  console.log('MongoDB reconnected successfully.');
-});
+  mongoose.connection.on('reconnected', () => {
+    console.log('MongoDB reconnected successfully.');
+  });
+}
 
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
@@ -146,10 +148,14 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Start server
-server.listen(PORT, () => {
-  console.log(`Server is running perfectly on http://localhost:${PORT}`);
-});
+// Start server if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(PORT, () => {
+    console.log(`Server is running perfectly on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {

@@ -19,10 +19,10 @@ const validateEmail = (email) => {
   return emailRegex.test(email);
 };
 
-const { parseTokenIfExists } = require('../middleware/auth');
+const { parseTokenIfExists, verifyToken } = require('../middleware/auth');
 
 // Throttle auth requests to prevent brute-force attacks
-const authLimiter = rateLimit({
+const authLimiter = process.env.NODE_ENV === 'test' ? (req, res, next) => next() : rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // limit each IP to 5 requests per windowMs
   message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
