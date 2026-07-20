@@ -22,7 +22,7 @@ const Dashboard = ({ setActiveTab, user }) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assignments/student/${userId}`);
       const json = await res.json();
-      if (res.ok) setAssignments(json);
+      if (res.ok) setAssignments(json.data || json);
     } catch (err) { console.error(err); }
   };
 

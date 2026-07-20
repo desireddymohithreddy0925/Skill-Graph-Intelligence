@@ -206,13 +206,14 @@ const ClassesManagement = ({ user }) => {
       setStudentProgress(pData.data?.stats);
       
       const wRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assignments/student/${student._id}`);
-      const wData = await wRes.json();
+      const wJson = await wRes.json();
+      const wData = wJson.data || wJson;
       setStudentWorks(wData);
 
       const rRes = await fetch(`${import.meta.env.VITE_BASE_URL}/api/dashboard/roadmap/${student._id}`);
       if(rRes.ok) {
         const rData = await rRes.json();
-        setStudentRoadmap(rData.skillRoadmap || []);
+        setStudentRoadmap(rData.data?.skillRoadmap || []);
       }
     } catch (err) {
       console.error(err);
