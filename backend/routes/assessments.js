@@ -15,7 +15,16 @@ const upload = multer({ dest: 'uploads/' });
 // Get all active assessments
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const assessments = await Assessment.find({ isActive: true }).sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Assessment.countDocuments({ isActive: true });
+    const assessments = await Assessment.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+      
     // Remove correct answers from the list payload to prevent cheating via API inspection
     const sanitized = assessments.map(a => {
       const aObj = a.toObject();
@@ -24,7 +33,7 @@ router.get('/', verifyToken, async (req, res) => {
       }
       return aObj;
     });
-    res.json(sanitized);
+    res.json({ data: sanitized, total, page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -33,8 +42,17 @@ router.get('/', verifyToken, async (req, res) => {
 // Get all assessments (Staff view) - includes correct answers
 router.get('/admin', verifyToken, requireStaff, async (req, res) => {
   try {
-    const assessments = await Assessment.find().sort({ createdAt: -1 });
-    res.json(assessments);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Assessment.countDocuments();
+    const assessments = await Assessment.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({ data: assessments, total, page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }

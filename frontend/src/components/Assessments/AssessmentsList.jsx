@@ -22,7 +22,7 @@ const AssessmentsList = ({ user, setActiveTab, setSelectedAssessmentId }) => {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
-      setAssessments(data);
+      setAssessments(data.data || data);
     } catch (err) {
       console.error(err);
     } finally {

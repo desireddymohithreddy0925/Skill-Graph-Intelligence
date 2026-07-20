@@ -29,8 +29,18 @@ router.get('/student/:id', verifyToken, async (req, res) => {
          return res.status(403).json({ error: 'Forbidden' });
        }
     }
-    const assignments = await Assignment.find({ studentId: req.params.id }).populate('mentorId', 'personalInfo.username email').sort({ createdAt: -1 });
-    res.json(assignments);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Assignment.countDocuments({ studentId: req.params.id });
+    const assignments = await Assignment.find({ studentId: req.params.id })
+      .populate('mentorId', 'personalInfo.username email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({ data: assignments, total, page, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
