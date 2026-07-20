@@ -15,10 +15,17 @@ const updateStreak = async (userId) => {
     // Normalize to midnight UTC for day comparisons
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    let updates = {};
+    let updatedUser;
 
     if (!lastActivity) {
-      updates = { streak: 1, lastActivityDate: now, activityHistory: [today] };
+      updatedUser = await User.findOneAndUpdate(
+        { _id: userId, lastActivityDate: null },
+        { 
+          $set: { streak: 1, lastActivityDate: now },
+          $addToSet: { activityHistory: today }
+        },
+        { new: true }
+      );
     } else {
       const lastDay = new Date(lastActivity.getFullYear(), lastActivity.getMonth(), lastActivity.getDate());
       const diffDays = Math.floor((today - lastDay) / (1000 * 60 * 60 * 24));
@@ -26,25 +33,35 @@ const updateStreak = async (userId) => {
       if (diffDays === 0) {
         return { streak: user.streak, message: 'Streak already maintained today.' };
       } else if (diffDays === 1) {
-        const history = [...user.activityHistory];
-        if (!history.some(d => new Date(d).getTime() === today.getTime())) {
-          history.push(today);
-        }
-        updates = { streak: user.streak + 1, lastActivityDate: now, activityHistory: history };
+        updatedUser = await User.findOneAndUpdate(
+          { _id: userId, lastActivityDate: user.lastActivityDate },
+          { 
+            $inc: { streak: 1 }, 
+            $set: { lastActivityDate: now }, 
+            $addToSet: { activityHistory: today } 
+          },
+          { new: true }
+        );
       } else {
-        const history = [...user.activityHistory];
-        if (!history.some(d => new Date(d).getTime() === today.getTime())) {
-          history.push(today);
-        }
-        updates = { streak: 1, lastActivityDate: now, activityHistory: history };
+        updatedUser = await User.findOneAndUpdate(
+          { _id: userId, lastActivityDate: user.lastActivityDate },
+          { 
+            $set: { streak: 1, lastActivityDate: now }, 
+            $addToSet: { activityHistory: today } 
+          },
+          { new: true }
+        );
       }
     }
 
-    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updates }, { new: true });
+    // If updatedUser is null, it means a concurrent request already updated it.
+    if (!updatedUser) {
+      return { streak: user.streak, message: 'Streak already updated concurrently.' };
+    }
+
     return { streak: updatedUser.streak, message: 'Streak updated!' };
   } catch (error) {
     console.error('Error updating streak:', error);
-    // Ignore error to avoid crashing the server on concurrent reads
   }
 };
 
