@@ -1,10 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middleware/auth');
+const Joi = require('joi');
+const { validateBody } = require('../middleware/validate');
+
+const resumeAnalysisSchema = Joi.object({
+  pastFileName: Joi.string().max(200).required(),
+  presentFileName: Joi.string().max(200).required()
+});
 
 // @route   POST /api/resume/analyze
 // @desc    Mock endpoint to analyze resumes and give suggestions
-router.post('/analyze', verifyToken, async (req, res) => {
+router.post('/analyze', verifyToken, validateBody(resumeAnalysisSchema), async (req, res) => {
   try {
     const { pastFileName, presentFileName } = req.body;
 
