@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, ExternalLink, Plus, Trash2 } from 'lucide-react';
 import './Dashboard.css'; // Reusing dashboard styles
 
@@ -12,12 +12,7 @@ const ImportantLinks = ({ user }) => {
 
   const isStaff = ['admin', 'sub admin', 'manager', 'mentor'].includes(user?.role);
 
-  useEffect(() => {
-    fetchLinks();
-    if (isStaff) fetchClasses();
-  }, []);
-
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     try {
       const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/classes', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -25,9 +20,9 @@ const ImportantLinks = ({ user }) => {
       const data = await res.json();
       setAvailableClasses(data);
     } catch(err) { console.error(err); }
-  };
+  }, []);
 
-  const fetchLinks = async () => {
+  const fetchLinks = useCallback(async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/links${user?._id ? `?userId=${user._id}` : ''}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -39,7 +34,12 @@ const ImportantLinks = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?._id]);
+
+  useEffect(() => {
+    fetchLinks();
+    if (isStaff) fetchClasses();
+  }, [isStaff, fetchLinks, fetchClasses]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
