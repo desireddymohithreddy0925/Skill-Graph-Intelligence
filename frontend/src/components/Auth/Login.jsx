@@ -84,7 +84,7 @@ const Login = ({ onLogin }) => {
         const response = await fetch(`${import.meta.env.VITE_BASE_URL}${endpoint}`, {
           method: 'POST',
           headers: headers,
-          body: JSON.stringify({ email: userEmail, password: password })
+          body: JSON.stringify({ email: userEmail })
         });
         
         const data = await response.json();
