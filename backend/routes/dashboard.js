@@ -9,20 +9,14 @@ const Assignment = require('../models/Assignment');
 const { evaluateCurrentStreak, updateStreak } = require('../utils/streakManager');
 const { verifyToken } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/roles');
+const { defaultDashboardData } = require('../utils/defaultData');
 
 // Helper to get the single mock dashboard data or create one for the user
 const getDashboardData = async (userId) => {
   let data = await DashboardData.findOne({ userId });
   if (!data) {
-    // If not found, clone the default template if it exists
-    const template = await DashboardData.findOne({ userId: 'default_user' });
-    if (template) {
-      const { _id, ...templateData } = template.toObject();
-      data = await DashboardData.create({ ...templateData, userId });
-    } else {
-      // Fallback if no template exists
-      data = await DashboardData.findOne(); // just get any for legacy support
-    }
+    // If not found, clone from defaultData schema
+    data = await DashboardData.create({ ...defaultDashboardData, userId });
   }
   return data;
 };
