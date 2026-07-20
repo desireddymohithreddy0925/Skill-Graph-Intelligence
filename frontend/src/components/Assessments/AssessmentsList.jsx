@@ -16,7 +16,7 @@ const AssessmentsList = ({ user, setActiveTab, setSelectedAssessmentId }) => {
   const fetchAssessments = async () => {
     try {
       const endpoint = isStaff ? '/api/assessments/admin' : '/api/assessments';
-      const res = await fetch(`http://localhost:5001${endpoint}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}${endpoint}`);
       const data = await res.json();
       setAssessments(data);
     } catch (err) {

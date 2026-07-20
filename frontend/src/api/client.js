@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.PROD ? 'https://nxtagenticm.onrender.com/api' : 'http://localhost:5001/api';
+const BASE_URL = import.meta.env.PROD ? 'https://nxtagenticm.onrender.com/api' : import.meta.env.VITE_BASE_URL + '/api';
 
 export const apiClient = async (endpoint, options = {}) => {
   const defaultOptions = {

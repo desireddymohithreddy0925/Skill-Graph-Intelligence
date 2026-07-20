@@ -30,7 +30,7 @@ const SkillTMeter = ({ user, onJoin }) => {
   const fetchPresentations = async () => {
     if (!(user?._id || user?.id)) return;
     try {
-      const res = await fetch(`http://localhost:5001/api/skilltmeter/presentations/user/${user._id || user.id}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/user/${user._id || user.id}`);
       const data = await res.json();
       setPresentations(data);
     } catch (err) {
@@ -40,7 +40,7 @@ const SkillTMeter = ({ user, onJoin }) => {
 
   const handleSave = async () => {
     try {
-      const url = editingId ? `http://localhost:5001/api/skilltmeter/presentations/${editingId}` : 'http://localhost:5001/api/skilltmeter/presentations';
+      const url = editingId ? `${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${editingId}` : import.meta.env.VITE_BASE_URL + '/api/skilltmeter/presentations';
       const method = editingId ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
@@ -76,7 +76,7 @@ const SkillTMeter = ({ user, onJoin }) => {
   const handleDelete = async (pId) => {
     if (!window.confirm('Are you sure you want to delete this presentation?')) return;
     try {
-      const res = await fetch(`http://localhost:5001/api/skilltmeter/presentations/${pId}`, { method: 'DELETE' });
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${pId}`, { method: 'DELETE' });
       if (res.ok) {
         setPresentations(presentations.filter(p => p._id !== pId));
       } else {
@@ -91,7 +91,7 @@ const SkillTMeter = ({ user, onJoin }) => {
 
   const fetchLeaderboard = async (presId) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/skilltmeter/presentations/${presId}/leaderboard`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${presId}/leaderboard`);
       if (res.ok) {
         const data = await res.json();
         setLeaderboard(data);
@@ -101,11 +101,11 @@ const SkillTMeter = ({ user, onJoin }) => {
 
   const startPresentation = async (pres) => {
     // Fetch full presentation
-    const res = await fetch(`http://localhost:5001/api/skilltmeter/presentations/${pres._id}`);
+    const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${pres._id}`);
     const data = await res.json();
     setActivePresentation(data);
 
-    const newSocket = io('http://localhost:5001');
+    const newSocket = io(import.meta.env.VITE_BASE_URL + '');
     setSocket(newSocket);
     newSocket.emit('joinPresentation', data.joinCode);
 
@@ -126,7 +126,7 @@ const SkillTMeter = ({ user, onJoin }) => {
   const stopPresentation = async () => {
     if (activePresentation) {
       try {
-        await fetch(`http://localhost:5001/api/skilltmeter/presentations/${activePresentation._id}/end`, { method: 'POST' });
+        await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${activePresentation._id}/end`, { method: 'POST' });
         fetchLeaderboard(activePresentation._id);
       } catch (err) { console.error(err); }
     }
@@ -137,7 +137,7 @@ const SkillTMeter = ({ user, onJoin }) => {
   const changeSlide = async (newIndex) => {
     if (newIndex < 0 || newIndex >= activePresentation.slides.length) return;
     try {
-      await fetch(`http://localhost:5001/api/skilltmeter/presentations/${activePresentation._id}/slide`, {
+      await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${activePresentation._id}/slide`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slideIndex: newIndex })
@@ -149,7 +149,7 @@ const SkillTMeter = ({ user, onJoin }) => {
   };
 
   const markQaAnswered = async (qaId) => {
-    await fetch(`http://localhost:5001/api/skilltmeter/presentations/${activePresentation.joinCode}/qa/${qaId}/answer`, { method: 'PUT' });
+    await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${activePresentation.joinCode}/qa/${qaId}/answer`, { method: 'PUT' });
   };
 
   const handleCopy = (code) => {

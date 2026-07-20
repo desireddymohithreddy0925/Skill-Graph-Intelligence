@@ -18,9 +18,9 @@ const Support = ({ user }) => {
   const fetchComplaints = async () => {
     setLoading(true);
     try {
-      let url = 'http://localhost:5001/api/complaints';
+      let url = import.meta.env.VITE_BASE_URL + '/api/complaints';
       if (user?.role === 'student') {
-        url = `http://localhost:5001/api/complaints/student/${user._id}`;
+        url = `${import.meta.env.VITE_BASE_URL}/api/complaints/student/${user._id}`;
       }
       const res = await fetch(url);
       const data = await res.json();
@@ -43,7 +43,7 @@ const Support = ({ user }) => {
 
     setSubmitting(true);
     try {
-      const res = await fetch('http://localhost:5001/api/complaints', {
+      const res = await fetch(import.meta.env.VITE_BASE_URL + '/api/complaints', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description, studentId: user._id })
@@ -64,7 +64,7 @@ const Support = ({ user }) => {
   const handleResolve = async (id) => {
     if (!window.confirm('Mark this issue as resolved?')) return;
     try {
-      const res = await fetch(`http://localhost:5001/api/complaints/${id}/resolve`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/complaints/${id}/resolve`, {
         method: 'PUT'
       });
       if (res.ok) {

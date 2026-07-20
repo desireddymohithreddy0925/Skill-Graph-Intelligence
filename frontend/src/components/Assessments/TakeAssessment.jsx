@@ -76,7 +76,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
 
   const fetchAssessment = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/assessments/${assessmentId}`);
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}`);
       const data = await res.json();
       
       // Jumble questions and options
@@ -135,7 +135,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
     }
 
     try {
-      const res = await fetch(`http://localhost:5001/api/assessments/${assessmentId}/submit`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/assessments/${assessmentId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
