@@ -184,7 +184,7 @@ const TakeAssessment = ({ user, assessmentId, setActiveTab }) => {
     }
   };
 
-  if (loading) return <Loading message="Loading assessment details..." fullScreen={true} />;
+  if (loading) return <Loading message="Loading assessment details..." fullScreen={false} />;
   if (!assessment) return <div style={{ padding: '2rem' }}>Assessment not found.</div>;
 
   const requestFullscreen = () => {
