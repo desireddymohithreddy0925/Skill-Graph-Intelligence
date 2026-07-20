@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const admin = require('../firebaseAdmin');
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-dev';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;

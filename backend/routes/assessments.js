@@ -150,7 +150,7 @@ router.get('/:id', verifyToken, async (req, res) => {
     
     const assessmentToken = jwt.sign(
       { assessmentId: req.params.id, studentId: req.user.id, startTime: Date.now() },
-      process.env.JWT_SECRET || 'fallback-secret-key-for-dev',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
     
@@ -179,7 +179,7 @@ router.post('/:id/submit', verifyToken, async (req, res) => {
     
     let decodedAt;
     try {
-      decodedAt = jwt.verify(_at, process.env.JWT_SECRET || 'fallback-secret-key-for-dev');
+      decodedAt = jwt.verify(_at, process.env.JWT_SECRET);
     } catch (e) {
       return res.status(400).json({ error: 'Invalid or expired assessment session' });
     }
