@@ -96,7 +96,7 @@ app.use('/api/complaints', complaintsRoutes);
 
 // Socket.io logic for SkillTMeter
 io.use((socket, next) => {
-  const cookies = cookie.parse(socket.handshake.headers.cookie || '');
+  const cookies = cookie.parseCookie(socket.handshake.headers.cookie || '');
   const token = cookies.token || socket.handshake.auth?.token;
   if (!token) {
     return next(new Error('Authentication error: Token missing'));

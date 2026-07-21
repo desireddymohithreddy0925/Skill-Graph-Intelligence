@@ -11,6 +11,10 @@ const userSchema = new mongoose.Schema({
   activityHistory: [{ type: Date }], // To track the exact days for the streak calendar
   classId: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', default: null },
   
+  // Password Reset
+  resetPasswordOtp: { type: String, default: null },
+  resetPasswordExpires: { type: Date, default: null },
+  
   // Personal Info
   personalInfo: {
     username: { type: String, default: '', maxLength: 255 },

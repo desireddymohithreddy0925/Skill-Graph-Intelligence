@@ -12,6 +12,7 @@ const { defaultDashboardData, defaultUserProgress } = require('../utils/defaultD
 const admin = require('../firebaseAdmin');
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const sendEmail = require('../utils/sendEmail');
 
 // Strict email validation regex
 const validateEmail = (email) => {
@@ -22,9 +23,9 @@ const validateEmail = (email) => {
 const { parseTokenIfExists, verifyToken } = require('../middleware/auth');
 
 // Throttle auth requests to prevent brute-force attacks
-const authLimiter = process.env.NODE_ENV === 'test' ? (req, res, next) => next() : rateLimit({
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 5 : 100, // 100 requests per IP for local dev
   message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
 });
 
@@ -127,17 +128,20 @@ router.post('/register', authLimiter, parseTokenIfExists, async (req, res) => {
 // @access  Public
 router.post('/login', authLimiter, parseTokenIfExists, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email: rawEmail, password } = req.body;
+    const userEmail = rawEmail ? rawEmail.toLowerCase().trim() : (req.user ? req.user.email : undefined);
+    console.log(`[LOGIN ATTEMPT] Email: ${userEmail}, HasPassword: ${!!password}, HasReqUser: ${!!req.user}`);
     
-    const userEmail = req.user ? req.user.email : email;
-
-    if (!userEmail) {
-      return res.status(400).json({ error: 'Please provide an email' });
+    // Validate request
+    if (!userEmail || (!password && !req.user)) {
+      console.log(`[LOGIN FAILED] Missing credentials for ${userEmail}`);
+      return res.status(400).json({ error: 'Please provide email and password' });
     }
 
     // Find user
     const user = await User.findOne({ email: userEmail });
     if (!user) {
+      console.log(`[LOGIN FAILED] User not found: ${userEmail}`);
       return res.status(400).json({ error: 'Invalid credentials. Please create an account.' });
     }
 
@@ -145,11 +149,17 @@ router.post('/login', authLimiter, parseTokenIfExists, async (req, res) => {
     if (!req.user && password) {
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
+        console.log(`[LOGIN FAILED] Invalid password for: ${userEmail}`);
         return res.status(400).json({ error: 'Invalid credentials' });
       }
     }
 
-    // Create token
+    // Generate JWT (ensure JWT_SECRET is available)
+    if (!process.env.JWT_SECRET) {
+      console.error('[LOGIN CRITICAL] JWT_SECRET is not set in environment variables');
+      return res.status(500).json({ error: 'Server configuration error: JWT_SECRET missing' });
+    };
+
     const payload = { 
       user: { 
         id: user.id,
@@ -165,8 +175,9 @@ router.post('/login', authLimiter, parseTokenIfExists, async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
+    console.log(`[LOGIN SUCCESS] Sending response for ${userEmail}`);
     res.status(200).json({
-      message: 'Login successful',
+      message: 'Logged in successfully',
       user: {
         id: user.id,
         email: user.email,
@@ -175,7 +186,7 @@ router.post('/login', authLimiter, parseTokenIfExists, async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Login error:', err.message);
+    console.error('[LOGIN ERROR] Server error during login:', err.message);
     res.status(500).json({ error: 'Server error during login' });
   }
 });
@@ -191,6 +202,83 @@ router.post('/logout', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Logout error:', err.message);
     res.status(500).json({ error: 'Server error during logout' });
+  }
+});
+// @route   POST /api/auth/forgot-password
+// @desc    Send OTP for password reset
+// @access  Public
+router.post('/forgot-password', authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Please provide an email' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with that email' });
+    }
+
+    // Generate 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Save to user
+    user.resetPasswordOtp = otp;
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 mins
+    await user.save();
+
+    // Send email
+    const message = `You requested a password reset. Your OTP is: ${otp}. It will expire in 10 minutes.\n\nIf you did not request this, please ignore this email.`;
+    await sendEmail({
+      email: user.email,
+      subject: 'Skill Graph Intelligence - Password Reset OTP',
+      message
+    });
+
+    res.status(200).json({ message: 'OTP sent to email successfully' });
+  } catch (err) {
+    console.error('Forgot password error:', err.message);
+    res.status(500).json({ error: 'Failed to send reset email' });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password using OTP
+// @access  Public
+router.post('/reset-password', authLimiter, async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    console.log(`[RESET PASSWORD ATTEMPT] Email: ${email}, OTP: ${otp}`);
+    
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: 'Please provide email, OTP, and new password' });
+    }
+
+    const user = await User.findOne({
+      email,
+      resetPasswordOtp: otp,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired OTP' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(12);
+    user.password = await bcrypt.hash(newPassword, salt);
+    
+    // Clear OTP fields and update tokenVersion to log out other devices
+    user.resetPasswordOtp = null;
+    user.resetPasswordExpires = null;
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
+    await user.save();
+
+    console.log(`[RESET PASSWORD SUCCESS] Password reset for ${user.email}`);
+    res.status(200).json({ message: 'Password has been reset successfully' });
+  } catch (err) {
+    console.error('Reset password error:', err.message);
+    res.status(500).json({ error: 'Server error during password reset' });
   }
 });
 

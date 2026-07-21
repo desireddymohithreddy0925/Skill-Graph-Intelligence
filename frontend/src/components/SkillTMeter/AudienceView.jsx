@@ -12,6 +12,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
   // Poll state
   const [selectedOption, setSelectedOption] = useState(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [pointsEarned, setPointsEarned] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
 
   // WordCloud state
@@ -76,6 +77,7 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
             setCurrentSlide(data.currentSlide);
             setHasVoted(false);
             setSelectedOption(null);
+            setPointsEarned(null);
             setWord('');
             
             if (data.currentSlide?.type === 'poll' && data.currentSlide?.timeLimit) {
@@ -111,11 +113,15 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
   const submitResponse = async (type, payload) => {
     try {
       const body = { type, slideIndex: presentation.currentSlideIndex, payload, userId: user?._id };
-      await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${joinCode}/submit`, {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/api/skilltmeter/presentations/${joinCode}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
+      const data = await res.json();
+      if (type === 'poll') {
+        setPointsEarned(data.pointsEarned || 0);
+      }
       setHasVoted(true);
     } catch (err) {
       console.error(err);
@@ -146,9 +152,16 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
 
   if (error) {
     return (
-      <div className="audience-container">
-        <h2>{error}</h2>
-        <button onClick={onLeave} className="btn-primary">Go Back</button>
+      <div className="audience-container" style={{ background: 'transparent' }}>
+        <div className="audience-content">
+          <div className="card" style={{ textAlign: 'center', padding: '3rem', maxWidth: '500px' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔌</div>
+            <h2 style={{ color: 'var(--error)', marginBottom: '1rem', fontSize: '1.5rem' }}>Connection Failed</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>{error}</p>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.85rem' }}>Make sure your backend server is currently running!</p>
+            <button onClick={onLeave} className="btn btn-primary" style={{ width: '100%' }}>Go Back to Dashboard</button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -156,10 +169,10 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
   if (!currentSlide) return <div className="audience-container">Loading...</div>;
 
   return (
-    <div className="audience-container">
-      <div className="audience-header">
-        <h2>{presentation.title}</h2>
-        <button onClick={onLeave} className="btn-leave">Leave</button>
+    <div className="audience-container" style={{ background: 'transparent' }}>
+      <div className="audience-header" style={{ background: 'rgba(20, 20, 20, 0.65)', backdropFilter: 'blur(24px)' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{presentation.title}</h2>
+        <button onClick={onLeave} className="btn-secondary" style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>Leave Presentation</button>
       </div>
 
       {showFullscreenWarning && (
@@ -182,9 +195,21 @@ const AudienceView = ({ joinCode, onLeave, user }) => {
               </div>
             )}
             {hasVoted ? (
-              <div className="vote-success">
-                <h3>Vote Recorded!</h3>
-                <p>Wait for the presenter to show the results.</p>
+              <div className="vote-success" style={{ textAlign: 'center', background: 'var(--bg-tertiary)', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
+                <h3 style={{ color: 'var(--accent-primary)', fontSize: '2rem', marginBottom: '1rem' }}>Vote Recorded!</h3>
+                {currentSlide.correctOptionIndex !== undefined && currentSlide.correctOptionIndex !== -1 && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    {pointsEarned > 0 ? (
+                      <p style={{ color: 'var(--success-color, #4caf50)', fontSize: '1.2rem', fontWeight: 'bold' }}>✅ Correct! You earned {pointsEarned} points.</p>
+                    ) : (
+                      <p style={{ color: 'var(--error)', fontSize: '1.2rem', fontWeight: 'bold' }}>❌ Incorrect.</p>
+                    )}
+                    <p style={{ marginTop: '0.5rem', fontSize: '1.1rem' }}>
+                      The correct answer was: <strong style={{ color: 'var(--accent-primary)' }}>{currentSlide.options[currentSlide.correctOptionIndex]}</strong>
+                    </p>
+                  </div>
+                )}
+                <p style={{ color: 'var(--text-secondary)' }}>Wait for the presenter to move to the next slide.</p>
               </div>
             ) : (
               <div className="poll-options">

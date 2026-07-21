@@ -50,7 +50,7 @@ input.pres-title-input:focus {
 .editor-layout {
   display: flex;
   gap: 2rem;
-  height: 400px;
+  min-height: 400px;
 }
 
 .slide-list {

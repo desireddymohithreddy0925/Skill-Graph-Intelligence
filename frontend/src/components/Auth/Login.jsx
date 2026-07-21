@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Network, BrainCircuit, TrendingUp, Award, Mail, Lock, ArrowRight, UserPlus } from 'lucide-react';
+import { Network, BrainCircuit, TrendingUp, Award, Mail, Lock, ArrowRight, UserPlus, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const isRegistering = authMode === 'register';
+  const isForgot = authMode === 'forgot';
+  const isReset = authMode === 'reset';
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Captcha State
   const [captchaMath, setCaptchaMath] = useState({ num1: 0, num2: 0 });
@@ -33,10 +41,27 @@ const Login = ({ onLogin }) => {
     return emailRegex.test(email);
   };
 
-  const handleSubmit = async (e) => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
+    console.log(`[FORM SUBMIT] authMode: ${authMode}`);
+    if (authMode === 'forgot') return handleForgotPassword(e);
+    if (authMode === 'reset') return handleResetPassword(e);
+    return handleSubmit(e);
+  };
+
+  const handleSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    console.log('[handleSubmit] Started login/register flow');
+    console.log(`[handleSubmit] Email: ${email}, isRegistering: ${isRegistering}`);
     
+    if (!email || !password) {
+      console.log('[handleSubmit] Missing credentials (possible Safari autofill issue)');
+      toast.error("Please ensure your email and password are filled out.");
+      return;
+    }
+
     if (!validateEmail(email)) {
+      console.log('[handleSubmit] Email validation failed');
       toast.error("Please enter a valid email address.");
       return;
     }
@@ -55,6 +80,7 @@ const Login = ({ onLogin }) => {
       }
     }
 
+    console.log('[handleSubmit] Setting isLoading to true');
     setIsLoading(true);
     
       try {
@@ -85,43 +111,50 @@ const Login = ({ onLogin }) => {
           headers['Authorization'] = `Bearer ${firebaseToken}`;
         }
 
-        const response = await fetch(`${import.meta.env.VITE_BASE_URL}${endpoint}`, {
+        console.log(`[handleSubmit] Sending request to backend: ${endpoint}`);
+        const response = await fetch(`${import.meta.env.VITE_BASE_URL || ''}${endpoint}`, {
           method: 'POST',
           headers: headers,
-          body: JSON.stringify({ email: userEmail, username: userObj?.displayName }),
+          body: JSON.stringify({ email: userEmail, password: password }),
           credentials: 'include'
         });
         
+        console.log(`[handleSubmit] Backend responded with status: ${response.status}`);
         const data = await response.json();
+        console.log(`[handleSubmit] Backend data:`, data);
         
         if (response.ok) {
+          console.log('[handleSubmit] Authentication successful! Calling onLogin...');
           onLogin(data.user);
           // Also store the standard token if the backend returns one, or just rely on Firebase
           if (data.token) {
             // Token is now set securely via HttpOnly cookie by the backend
           }
         } else {
+          console.log(`[handleSubmit] Authentication failed: ${data.error}`);
           toast.error(data.error || 'Authentication failed');
           if (!isRegistering && data.error && data.error.includes('create an account')) {
-            setIsRegistering(true);
+            setAuthMode('register');
           }
         }
       } catch (err) {
-        console.error('Auth error:', err);
+        console.error('[handleSubmit] Fatal error during auth:', err);
         // Firebase specific error messages
         if (err.code === 'auth/email-already-in-use') {
           toast.error('This email is already registered. Please sign in instead.');
-          setIsRegistering(false);
+          setAuthMode('login');
         } else {
           toast.error('Authentication Error: ' + err.message);
         }
       } finally {
+      console.log('[handleSubmit] Setting isLoading to false');
       setIsLoading(false);
     }
   };
 
   const handleForgotPassword = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    console.log(`[handleForgotPassword] called with email: ${email}`);
     if (!email) {
       toast.error('Please enter your email address first.');
       return;
@@ -129,14 +162,53 @@ const Login = ({ onLogin }) => {
     
     setIsLoading(true);
     try {
-      const { sendPasswordResetEmail } = await import("firebase/auth");
-      const { auth } = await import("../../firebase");
-      
-      await sendPasswordResetEmail(auth, email);
-      toast.success('Password reset email sent! Check your inbox.');
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL || ''}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success(data.message || 'OTP sent to your email!');
+        setAuthMode('reset');
+      } else {
+        toast.error(data.error || 'Failed to send OTP.');
+      }
     } catch (err) {
       console.error(err);
       toast.error(err.message || 'Failed to send password reset email.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    console.log(`[handleResetPassword] called with email: ${email}, otp: ${otp}`);
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL || ''}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, newPassword })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success('Password has been reset successfully! Please sign in.');
+        setAuthMode('login');
+        setPassword('');
+        setConfirmPassword('');
+        setOtp('');
+      } else {
+        toast.error(data.error || 'Failed to reset password.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Error resetting password.');
     } finally {
       setIsLoading(false);
     }
@@ -203,45 +275,85 @@ const Login = ({ onLogin }) => {
                 <Network size={20} color="var(--accent-primary)" />
                 <span>Skill Graph</span>
               </div>
-              <h2 className="login-card-title">{isRegistering ? 'Create Account' : 'Welcome back'}</h2>
+              <h2 className="login-card-title">
+                {isRegistering ? 'Create Account' : isForgot ? 'Reset Password' : isReset ? 'Enter OTP' : 'Welcome back'}
+              </h2>
               <p className="login-card-subtitle">
-                {isRegistering ? 'Join the platform to map your career' : 'Sign in to continue your learning journey'}
+                {isRegistering ? 'Join the platform to map your career' : isForgot ? 'Enter your email to receive an OTP' : isReset ? 'Create your new password' : 'Sign in to continue your learning journey'}
               </p>
             </div>
 
-            <form className="login-form" onSubmit={handleSubmit}>
-              <div className="login-input-group">
-                <label htmlFor="email">Email address</label>
-                <div className="login-input-wrapper">
-                  <Mail size={16} className="login-input-icon" />
-                  <input
-                    type="email"
-                    id="email"
-                    placeholder="you@university.edu"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+            <form className="login-form" onSubmit={handleFormSubmit}>
+              
+              {!isReset && (
+                <div className="login-input-group">
+                  <label htmlFor="email">Email address</label>
+                  <div className="login-input-wrapper">
+                    <Mail size={16} className="login-input-icon" />
+                    <input
+                      type="email"
+                      id="email"
+                      placeholder="you@university.edu"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="login-input-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label htmlFor="password">Password</label>
-                  {!isRegistering && <a href="#" onClick={handleForgotPassword} className="login-forgot">Forgot password?</a>}
+              {isReset && (
+                <>
+                  <div className="login-input-group">
+                    <label htmlFor="otp">6-Digit OTP</label>
+                    <div className="login-input-wrapper">
+                      <Lock size={16} className="login-input-icon" />
+                      <input type="text" id="otp" placeholder="123456" value={otp} onChange={(e) => setOtp(e.target.value)} style={{ paddingLeft: '3rem' }} />
+                    </div>
+                  </div>
+                  <div className="login-input-group">
+                    <label htmlFor="newPassword">New Password</label>
+                    <div className="login-input-wrapper">
+                      <Lock size={16} className="login-input-icon" />
+                      <input type={showPassword ? "text" : "password"} id="newPassword" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={{ paddingLeft: '3rem' }} />
+                      <button type="button" className="login-password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="login-input-group">
+                    <label htmlFor="confirmPassword">Confirm New Password</label>
+                    <div className="login-input-wrapper">
+                      <Lock size={16} className="login-input-icon" />
+                      <input type={showConfirmPassword ? "text" : "password"} id="confirmPassword" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={{ paddingLeft: '3rem' }} />
+                      <button type="button" className="login-password-toggle" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {(!isForgot && !isReset) && (
+                <div className="login-input-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label htmlFor="password">Password</label>
+                    {!isRegistering && <a href="#" onClick={(e) => { e.preventDefault(); setAuthMode('forgot'); }} className="login-forgot">Forgot password?</a>}
+                  </div>
+                  <div className="login-input-wrapper">
+                    <Lock size={16} className="login-input-icon" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button type="button" className="login-password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
-                <div className="login-input-wrapper">
-                  <Lock size={16} className="login-input-icon" />
-                  <input
-                    type="password"
-                    id="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
+              )}
 
               {isRegistering && (
                 <>
@@ -250,13 +362,15 @@ const Login = ({ onLogin }) => {
                     <div className="login-input-wrapper">
                       <Lock size={16} className="login-input-icon" />
                       <input
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         id="confirmPassword"
                         placeholder="••••••••"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
                       />
+                      <button type="button" className="login-password-toggle" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
                   </div>
 
@@ -269,7 +383,6 @@ const Login = ({ onLogin }) => {
                         placeholder="Enter sum"
                         value={captchaAnswer}
                         onChange={(e) => setCaptchaAnswer(e.target.value)}
-                        required
                         style={{ paddingLeft: '1rem' }}
                       />
                     </div>
@@ -281,11 +394,11 @@ const Login = ({ onLogin }) => {
                 {isLoading ? (
                   <span className="login-loading">
                     <span className="login-spinner"></span>
-                    {isRegistering ? 'Creating Account...' : 'Signing In...'}
+                    {isRegistering ? 'Creating Account...' : isForgot ? 'Sending OTP...' : isReset ? 'Resetting...' : 'Signing In...'}
                   </span>
                 ) : (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
-                    {isRegistering ? 'Create Account' : 'Sign In'} 
+                    {isRegistering ? 'Create Account' : isForgot ? 'Send OTP' : isReset ? 'Reset Password' : 'Sign In'} 
                     {isRegistering ? <UserPlus size={18} /> : <ArrowRight size={18} />}
                   </span>
                 )}
@@ -294,9 +407,11 @@ const Login = ({ onLogin }) => {
 
             <div className="login-toggle">
               {isRegistering ? (
-                <p>Already have an account? <span className="login-toggle-link" onClick={() => setIsRegistering(false)}>Sign in</span></p>
+                <p>Already have an account? <span className="login-toggle-link" onClick={() => setAuthMode('login')}>Sign in</span></p>
+              ) : isForgot || isReset ? (
+                <p>Remembered your password? <span className="login-toggle-link" onClick={() => setAuthMode('login')}>Sign in</span></p>
               ) : (
-                <p>Don't have an account? <span className="login-toggle-link" onClick={() => setIsRegistering(true)}>Create one</span></p>
+                <p>Don't have an account? <span className="login-toggle-link" onClick={() => setAuthMode('register')}>Create one</span></p>
               )}
             </div>
           </div>
